@@ -1,0 +1,602 @@
+[
+  {
+    "number": 1,
+    "word": "One",
+    "emoji": "🐻",
+    "color": "#FFB199"
+  },
+  {
+    "number": 2,
+    "word": "Two",
+    "emoji": "🐸",
+    "color": "#FF9E7D"
+  },
+  {
+    "number": 3,
+    "word": "Three",
+    "emoji": "🐷",
+    "color": "#FF8960"
+  },
+  {
+    "number": 4,
+    "word": "Four",
+    "emoji": "🐼",
+    "color": "#F26D6D"
+  },
+  {
+    "number": 5,
+    "word": "Five",
+    "emoji": "🐙",
+    "color": "#FF7594"
+  },
+  {
+    "number": 6,
+    "word": "Six",
+    "emoji": "🦋",
+    "color": "#F778B9"
+  },
+  {
+    "number": 7,
+    "word": "Seven",
+    "emoji": "🐞",
+    "color": "#E28FE0"
+  },
+  {
+    "number": 8,
+    "word": "Eight",
+    "emoji": "🐣",
+    "color": "#B993F0"
+  },
+  {
+    "number": 9,
+    "word": "Nine",
+    "emoji": "🦀",
+    "color": "#8F95F0"
+  },
+  {
+    "number": 10,
+    "word": "Ten",
+    "emoji": "🐠",
+    "color": "#5FA8E6"
+  },
+  {
+    "number": 11,
+    "word": "Eleven",
+    "emoji": "🐬",
+    "color": "#70C1E8"
+  },
+  {
+    "number": 12,
+    "word": "Twelve",
+    "emoji": "🦑",
+    "color": "#6FC8C9"
+  },
+  {
+    "number": 13,
+    "word": "Thirteen",
+    "emoji": "🐊",
+    "color": "#78D6B6"
+  },
+  {
+    "number": 14,
+    "word": "Fourteen",
+    "emoji": "🦖",
+    "color": "#8FD694"
+  },
+  {
+    "number": 15,
+    "word": "Fifteen",
+    "emoji": "🐓",
+    "color": "#92D177"
+  },
+  {
+    "number": 16,
+    "word": "Sixteen",
+    "emoji": "🦉",
+    "color": "#B8CC6B"
+  },
+  {
+    "number": 17,
+    "word": "Seventeen",
+    "emoji": "🐧",
+    "color": "#E0C868"
+  },
+  {
+    "number": 18,
+    "word": "Eighteen",
+    "emoji": "🦆",
+    "color": "#FFC15C"
+  },
+  {
+    "number": 19,
+    "word": "Nineteen",
+    "emoji": "🦚",
+    "color": "#FFA94D"
+  },
+  {
+    "number": 20,
+    "word": "Twenty",
+    "emoji": "🐰",
+    "color": "#FF9A3B"
+  },
+  {
+    "number": 21,
+    "word": "Twenty One",
+    "emoji": "🦜",
+    "color": "#F08A5B"
+  },
+  {
+    "number": 22,
+    "word": "Twenty Two",
+    "emoji": "🐱",
+    "color": "#E5A16F"
+  },
+  {
+    "number": 23,
+    "word": "Twenty Three",
+    "emoji": "🐶",
+    "color": "#D2A77B"
+  },
+  {
+    "number": 24,
+    "word": "Twenty Four",
+    "emoji": "🦩",
+    "color": "#C9B79C"
+  },
+  {
+    "number": 25,
+    "word": "Twenty Five",
+    "emoji": "🐨",
+    "color": "#AFB2D6"
+  },
+  {
+    "number": 26,
+    "word": "Twenty Six",
+    "emoji": "🐹",
+    "color": "#B39DD6"
+  },
+  {
+    "number": 27,
+    "word": "Twenty Seven",
+    "emoji": "🦝",
+    "color": "#FFB199"
+  },
+  {
+    "number": 28,
+    "word": "Twenty Eight",
+    "emoji": "🦡",
+    "color": "#FF9E7D"
+  },
+  {
+    "number": 29,
+    "word": "Twenty Nine",
+    "emoji": "🦮",
+    "color": "#FF8960"
+  },
+  {
+    "number": 30,
+    "word": "Thirty",
+    "emoji": "🐕",
+    "color": "#F26D6D"
+  },
+  {
+    "number": 31,
+    "word": "Thirty One",
+    "emoji": "🐜",
+    "color": "#FF7594"
+  },
+  {
+    "number": 32,
+    "word": "Thirty Two",
+    "emoji": "🐝",
+    "color": "#F778B9"
+  },
+  {
+    "number": 33,
+    "word": "Thirty Three",
+    "emoji": "🦗",
+    "color": "#E28FE0"
+  },
+  {
+    "number": 34,
+    "word": "Thirty Four",
+    "emoji": "🕷️",
+    "color": "#B993F0"
+  },
+  {
+    "number": 35,
+    "word": "Thirty Five",
+    "emoji": "🐌",
+    "color": "#8F95F0"
+  },
+  {
+    "number": 36,
+    "word": "Thirty Six",
+    "emoji": "🐚",
+    "color": "#5FA8E6"
+  },
+  {
+    "number": 37,
+    "word": "Thirty Seven",
+    "emoji": "🦭",
+    "color": "#70C1E8"
+  },
+  {
+    "number": 38,
+    "word": "Thirty Eight",
+    "emoji": "🐳",
+    "color": "#6FC8C9"
+  },
+  {
+    "number": 39,
+    "word": "Thirty Nine",
+    "emoji": "🐋",
+    "color": "#78D6B6"
+  },
+  {
+    "number": 40,
+    "word": "Forty",
+    "emoji": "🦈",
+    "color": "#8FD694"
+  },
+  {
+    "number": 41,
+    "word": "Forty One",
+    "emoji": "🐩",
+    "color": "#92D177"
+  },
+  {
+    "number": 42,
+    "word": "Forty Two",
+    "emoji": "🐉",
+    "color": "#B8CC6B"
+  },
+  {
+    "number": 43,
+    "word": "Forty Three",
+    "emoji": "🦎",
+    "color": "#E0C868"
+  },
+  {
+    "number": 44,
+    "word": "Forty Four",
+    "emoji": "🐢",
+    "color": "#FFC15C"
+  },
+  {
+    "number": 45,
+    "word": "Forty Five",
+    "emoji": "🐍",
+    "color": "#FFA94D"
+  },
+  {
+    "number": 46,
+    "word": "Forty Six",
+    "emoji": "🦃",
+    "color": "#FF9A3B"
+  },
+  {
+    "number": 47,
+    "word": "Forty Seven",
+    "emoji": "🦕",
+    "color": "#F08A5B"
+  },
+  {
+    "number": 48,
+    "word": "Forty Eight",
+    "emoji": "🐐",
+    "color": "#E5A16F"
+  },
+  {
+    "number": 49,
+    "word": "Forty Nine",
+    "emoji": "🐑",
+    "color": "#D2A77B"
+  },
+  {
+    "number": 50,
+    "word": "Fifty",
+    "emoji": "🐏",
+    "color": "#C9B79C"
+  },
+  {
+    "number": 51,
+    "word": "Fifty One",
+    "emoji": "🐫",
+    "color": "#AFB2D6"
+  },
+  {
+    "number": 52,
+    "word": "Fifty Two",
+    "emoji": "🦙",
+    "color": "#B39DD6"
+  },
+  {
+    "number": 53,
+    "word": "Fifty Three",
+    "emoji": "🦄",
+    "color": "#FFB199"
+  },
+  {
+    "number": 54,
+    "word": "Fifty Four",
+    "emoji": "🐴",
+    "color": "#FF9E7D"
+  },
+  {
+    "number": 55,
+    "word": "Fifty Five",
+    "emoji": "🦓",
+    "color": "#FF8960"
+  },
+  {
+    "number": 56,
+    "word": "Fifty Six",
+    "emoji": "🦒",
+    "color": "#F26D6D"
+  },
+  {
+    "number": 57,
+    "word": "Fifty Seven",
+    "emoji": "🐘",
+    "color": "#FF7594"
+  },
+  {
+    "number": 58,
+    "word": "Fifty Eight",
+    "emoji": "🦏",
+    "color": "#F778B9"
+  },
+  {
+    "number": 59,
+    "word": "Fifty Nine",
+    "emoji": "🦛",
+    "color": "#E28FE0"
+  },
+  {
+    "number": 60,
+    "word": "Sixty",
+    "emoji": "🐆",
+    "color": "#B993F0"
+  },
+  {
+    "number": 61,
+    "word": "Sixty One",
+    "emoji": "🐅",
+    "color": "#8F95F0"
+  },
+  {
+    "number": 62,
+    "word": "Sixty Two",
+    "emoji": "🐯",
+    "color": "#5FA8E6"
+  },
+  {
+    "number": 63,
+    "word": "Sixty Three",
+    "emoji": "🦁",
+    "color": "#70C1E8"
+  },
+  {
+    "number": 64,
+    "word": "Sixty Four",
+    "emoji": "🐺",
+    "color": "#6FC8C9"
+  },
+  {
+    "number": 65,
+    "word": "Sixty Five",
+    "emoji": "🦊",
+    "color": "#78D6B6"
+  },
+  {
+    "number": 66,
+    "word": "Sixty Six",
+    "emoji": "🐔",
+    "color": "#8FD694"
+  },
+  {
+    "number": 67,
+    "word": "Sixty Seven",
+    "emoji": "🦢",
+    "color": "#92D177"
+  },
+  {
+    "number": 68,
+    "word": "Sixty Eight",
+    "emoji": "🦐",
+    "color": "#B8CC6B"
+  },
+  {
+    "number": 69,
+    "word": "Sixty Nine",
+    "emoji": "🐒",
+    "color": "#E0C868"
+  },
+  {
+    "number": 70,
+    "word": "Seventy",
+    "emoji": "🐵",
+    "color": "#FFC15C"
+  },
+  {
+    "number": 71,
+    "word": "Seventy One",
+    "emoji": "🦧",
+    "color": "#FFA94D"
+  },
+  {
+    "number": 72,
+    "word": "Seventy Two",
+    "emoji": "🦞",
+    "color": "#FF9A3B"
+  },
+  {
+    "number": 73,
+    "word": "Seventy Three",
+    "emoji": "🦌",
+    "color": "#F08A5B"
+  },
+  {
+    "number": 74,
+    "word": "Seventy Four",
+    "emoji": "🐭",
+    "color": "#E5A16F"
+  },
+  {
+    "number": 75,
+    "word": "Seventy Five",
+    "emoji": "🦬",
+    "color": "#D2A77B"
+  },
+  {
+    "number": 76,
+    "word": "Seventy Six",
+    "emoji": "🦫",
+    "color": "#C9B79C"
+  },
+  {
+    "number": 77,
+    "word": "Seventy Seven",
+    "emoji": "🦥",
+    "color": "#AFB2D6"
+  },
+  {
+    "number": 78,
+    "word": "Seventy Eight",
+    "emoji": "🦦",
+    "color": "#B39DD6"
+  },
+  {
+    "number": 79,
+    "word": "Seventy Nine",
+    "emoji": "🐿",
+    "color": "#FFB199"
+  },
+  {
+    "number": 80,
+    "word": "Eighty",
+    "emoji": "🐁",
+    "color": "#FF9E7D"
+  },
+  {
+    "number": 81,
+    "word": "Eighty One",
+    "emoji": "🐀",
+    "color": "#FF8960"
+  },
+  {
+    "number": 82,
+    "word": "Eighty Two",
+    "emoji": "🦂",
+    "color": "#F26D6D"
+  },
+  {
+    "number": 83,
+    "word": "Eighty Three",
+    "emoji": "🐾",
+    "color": "#FF7594"
+  },
+  {
+    "number": 84,
+    "word": "Eighty Four",
+    "emoji": "🌻",
+    "color": "#F778B9"
+  },
+  {
+    "number": 85,
+    "word": "Eighty Five",
+    "emoji": "🌼",
+    "color": "#E28FE0"
+  },
+  {
+    "number": 86,
+    "word": "Eighty Six",
+    "emoji": "🌵",
+    "color": "#B993F0"
+  },
+  {
+    "number": 87,
+    "word": "Eighty Seven",
+    "emoji": "🍄",
+    "color": "#8F95F0"
+  },
+  {
+    "number": 88,
+    "word": "Eighty Eight",
+    "emoji": "🍎",
+    "color": "#5FA8E6"
+  },
+  {
+    "number": 89,
+    "word": "Eighty Nine",
+    "emoji": "🍐",
+    "color": "#70C1E8"
+  },
+  {
+    "number": 90,
+    "word": "Ninety",
+    "emoji": "🍌",
+    "color": "#6FC8C9"
+  },
+  {
+    "number": 91,
+    "word": "Ninety One",
+    "emoji": "🍉",
+    "color": "#78D6B6"
+  },
+  {
+    "number": 92,
+    "word": "Ninety Two",
+    "emoji": "🍇",
+    "color": "#8FD694"
+  },
+  {
+    "number": 93,
+    "word": "Ninety Three",
+    "emoji": "🍓",
+    "color": "#92D177"
+  },
+  {
+    "number": 94,
+    "word": "Ninety Four",
+    "emoji": "🍒",
+    "color": "#B8CC6B"
+  },
+  {
+    "number": 95,
+    "word": "Ninety Five",
+    "emoji": "🍈",
+    "color": "#E0C868"
+  },
+  {
+    "number": 96,
+    "word": "Ninety Six",
+    "emoji": "🍑",
+    "color": "#FFC15C"
+  },
+  {
+    "number": 97,
+    "word": "Ninety Seven",
+    "emoji": "🥝",
+    "color": "#FFA94D"
+  },
+  {
+    "number": 98,
+    "word": "Ninety Eight",
+    "emoji": "🥑",
+    "color": "#FF9A3B"
+  },
+  {
+    "number": 99,
+    "word": "Ninety Nine",
+    "emoji": "🫐",
+    "color": "#F08A5B"
+  },
+  {
+    "number": 100,
+    "word": "One Hundred",
+    "emoji": "🥭",
+    "color": "#E5A16F"
+  }
+]

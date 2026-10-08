@@ -1,0 +1,43 @@
+name: kids
+description: "Alphabet Learning App for kids (A-Z) with sounds, letter tracing and a quiz mode."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_bloc: ^8.1.6
+  get_it: ^7.7.0
+  go_router: ^14.2.7
+  audioplayers: ^6.1.0
+  flutter_tts: ^4.0.2
+  shared_preferences: ^2.3.2
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Static data only; images and sounds are generated at runtime in code.
+  assets:
+    - assets/data/
+
+  fonts:
+    - family: Baloo2
+      fonts:
+        - asset: assets/fonts/Baloo2.ttf
+    # Headings: rounded, chunky and friendly - the app's display face.
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka.ttf
+    # Body: high legibility at small sizes for young readers.
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf
