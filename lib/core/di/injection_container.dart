@@ -9,6 +9,9 @@ import '../../features/lesson/domain/lesson_repository.dart';
 import '../../features/numbers/data/repositories/number_repository_impl.dart';
 import '../../features/numbers/domain/repositories/number_repository.dart';
 import '../../features/numbers/presentation/bloc/number_bloc.dart';
+import '../../features/puzzles/data/repositories/puzzle_repository_impl.dart';
+import '../../features/puzzles/domain/repositories/puzzle_repository.dart';
+import '../../features/puzzles/presentation/bloc/puzzle_catalog_cubit.dart';
 import '../../features/quiz/data/repositories/quiz_repository_impl.dart';
 import '../../features/quiz/domain/repositories/quiz_repository.dart';
 import '../../features/quiz/presentation/bloc/quiz_bloc.dart';
@@ -49,6 +52,7 @@ Future<void> configureDependencies() async {
     ..registerLazySingleton<AlphabetRepository>(AlphabetRepositoryImpl.new)
     ..registerLazySingleton<NumberRepository>(NumberRepositoryImpl.new)
     ..registerLazySingleton<QuizRepository>(QuizRepositoryImpl.new)
+    ..registerLazySingleton<PuzzleRepository>(PuzzleRepositoryImpl.new)
     ..registerLazySingleton<LessonRepository>(
       () => LessonRepositoryImpl(
         alphabetRepository: sl<AlphabetRepository>(),
@@ -74,6 +78,12 @@ Future<void> configureDependencies() async {
         repository: sl<QuizRepository>(),
         audioService: sl<AudioService>(),
         progressService: sl<ProgressService>(),
+      ),
+    )
+    ..registerFactory<PuzzleCatalogCubit>(
+      () => PuzzleCatalogCubit(
+        repository: sl<PuzzleRepository>(),
+        progress: sl<ProgressService>(),
       ),
     );
 

@@ -315,6 +315,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
+      await openWorld(tester, 'Alphabet Land');
       await tester.tap(find.byKey(const ValueKey<String>('letter-S')));
       await openAndSettle(tester, const Duration(milliseconds: 600));
       final Finder canvas = find.byType(TracingCanvas);
@@ -348,6 +349,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
+      await openWorld(tester, 'Alphabet Land');
       await tester.tap(find.byKey(const ValueKey<String>('letter-S')));
       await openAndSettle(tester, const Duration(milliseconds: 600));
       final Finder canvas = find.byType(TracingCanvas);
@@ -498,13 +500,15 @@ void main() {
   });
 
   group('5. Grown-up settings screen', () {
-    /// The switches, in the order the screen lists them.
+    /// The switches, in the order the screen lists them. "Reduce motion" is
+    /// the one switch that starts off (motion fully on is the default).
     const List<String> switchTitles = <String>[
       'Mascot animations',
       'Sparkle surprises',
       'Mascot voice',
       'Sound effects',
       'Voice narration',
+      'Reduce motion',
     ];
 
     Future<void> openSettings(WidgetTester tester) async {
@@ -526,9 +530,16 @@ void main() {
       }
       expect(find.byType(MascotView), findsOneWidget,
           reason: 'a parent can see the mascot they are configuring');
-      for (final Switch toggle in tester.widgetList<Switch>(find.byType(Switch))) {
+      final List<Switch> toggles =
+          tester.widgetList<Switch>(find.byType(Switch)).toList();
+      for (final Switch toggle in toggles.take(switchTitles.length - 1)) {
         expect(toggle.value, isTrue, reason: 'everything starts switched on');
       }
+      expect(
+        toggles.last.value,
+        isFalse,
+        reason: 'reduce motion starts off so the app is lively by default',
+      );
 
       // Tapping Pip on the preview screen makes him react right there.
       await tester.tap(find.byType(MascotView));
@@ -602,15 +613,46 @@ void main() {
       await tester.tap(find.text('Turn everything back on'));
       await settleFrames(tester);
 
-      for (final Switch toggle in tester.widgetList<Switch>(find.byType(Switch))) {
+      final List<Switch> toggles =
+          tester.widgetList<Switch>(find.byType(Switch)).toList();
+      // Every delight switch is on again...
+      for (final Switch toggle in toggles.take(switchTitles.length - 1)) {
         expect(toggle.value, isTrue);
       }
+      // ...and "reduce motion" returns to its default (off = full motion on).
+      expect(toggles.last.value, isFalse);
+
       final SharedPreferences store = await SharedPreferences.getInstance();
       expect(store.getBool(SettingsRepositoryImpl.animationsKey), isTrue);
       expect(store.getBool(SettingsRepositoryImpl.sparklesKey), isTrue);
       expect(store.getBool(SettingsRepositoryImpl.speechKey), isTrue);
       expect(store.getBool(SettingsRepositoryImpl.soundKey), isTrue);
       expect(store.getBool(SettingsRepositoryImpl.voiceKey), isTrue);
+      expect(store.getBool(SettingsRepositoryImpl.reduceMotionKey), isFalse);
+    });
+
+    testWidgets('the reduce motion switch turns motion off and stays off', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(tester);
+      await openSettings(tester);
+
+      // It is the last switch and starts off, so the app is lively by default.
+      Finder reduceMotion = find.byType(Switch).last;
+      expect(tester.widget<Switch>(reduceMotion).value, isFalse);
+
+      await tester.tap(reduceMotion);
+      await settleFrames(tester);
+      expect(tester.widget<Switch>(find.byType(Switch).last).value, isTrue);
+
+      final SharedPreferences store = await SharedPreferences.getInstance();
+      expect(store.getBool(SettingsRepositoryImpl.reduceMotionKey), isTrue);
+
+      // A parent should not have to set it again after a restart.
+      await restartApp(tester);
+      await openSettings(tester);
+      reduceMotion = find.byType(Switch).last;
+      expect(tester.widget<Switch>(reduceMotion).value, isTrue);
     });
   });
 }

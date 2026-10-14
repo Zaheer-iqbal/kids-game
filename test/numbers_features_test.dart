@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +32,10 @@ Future<void> pumpApp(
   await tester.runAsync(() async {
     await tester.pumpWidget(const AlphabetKidsApp());
     await Future<void>.delayed(const Duration(milliseconds: 400));
+    // Warm the engine-backed asset cache so explorer loads resolve reliably
+    // even when a world is opened in a later test of the same file.
+    await rootBundle.loadString('assets/data/alphabet.json');
+    await rootBundle.loadString('assets/data/numbers.json');
   });
   await settleFrames(tester, frames: 20);
   for (int i = 0;
@@ -43,10 +48,24 @@ Future<void> pumpApp(
   }
 }
 
-/// From the adventure map, opens a world's explorer by tapping its banner.
+/// From the adventure map, opens a world's explorer by tapping its banner and
+/// waits until its grid is actually on screen (the explorer loads letters /
+/// numbers through real-async asset IO, which needs real time to finish).
 Future<void> openWorld(WidgetTester tester, String title) async {
   await tester.tap(find.text(title));
-  await openAndSettle(tester);
+  await tester.pump();
+  final bool isAlphabet = title == 'Alphabet Land';
+  for (int i = 0; i < 40; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await settleFrames(tester);
+    final bool ready = isAlphabet
+        ? find.byKey(const ValueKey<String>('letter-A')).evaluate().isNotEmpty
+        : find.byKey(const ValueKey<String>('number-1')).evaluate().isNotEmpty;
+    if (ready) return;
+  }
+  tester.takeException();
 }
 
 /// Lazy work in real async zones (rootBundle loads, glyph rasterization) needs
@@ -99,7 +118,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
-      await openWorld(tester, 'Number Jungle');
+      await openWorld(tester, 'Number World');
 
       expect(find.text('0 of 100 numbers explored'), findsOneWidget);
       expect(find.byKey(const ValueKey<String>('number-1')), findsOneWidget);
@@ -112,9 +131,7 @@ void main() {
       (WidgetTester tester) async {
         await pumpApp(tester);
 
-        await tester.tap(find.text('Numbers'));
-        await openAndSettle(tester);
-
+        await openWorld(tester, 'Number World');
         await tester.tap(find.byKey(const ValueKey<String>('number-1')));
         await openAndSettle(tester);
 
@@ -144,7 +161,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
-      await openWorld(tester, 'Number Jungle');
+      await openWorld(tester, 'Number World');
       await tester.tap(find.byKey(const ValueKey<String>('number-5')));
       await openAndSettle(tester);
 
@@ -264,7 +281,7 @@ void main() {
         'explored_numbers': <String>['7', '12'],
       });
 
-      await openWorld(tester, 'Number Jungle');
+      await openWorld(tester, 'Number World');
       expect(find.text('2 of 100 numbers explored'), findsOneWidget);
       expect(find.text('123 Count'), findsOneWidget);
 

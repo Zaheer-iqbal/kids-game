@@ -6,6 +6,9 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/lesson/presentation/pages/lesson_page.dart';
 import '../../features/numbers/presentation/pages/numbers_home_page.dart';
 import '../../features/onboarding/presentation/pages/intro_page.dart';
+import '../../features/puzzles/presentation/pages/my_animals_page.dart';
+import '../../features/puzzles/presentation/pages/puzzle_map_page.dart';
+import '../../features/puzzles/presentation/pages/puzzle_play_page.dart';
 import '../../features/quiz/domain/entities/quiz_type.dart';
 import '../../features/quiz/presentation/pages/quiz_menu_page.dart';
 import '../../features/quiz/presentation/pages/quiz_page.dart';
@@ -27,6 +30,11 @@ abstract final class AppRoutes {
   static const String quizOddOneOut = '/quiz/odd-one-out';
   static const String quizResults = '/quiz-results';
   static const String lesson = '/lesson';
+  static const String puzzles = '/puzzles';
+  static const String myAnimals = '/my-animals';
+
+  /// `/puzzles/<index>` - one animal puzzle.
+  static String puzzleRoute(int index) => '$puzzles/$index';
 
   /// `/lesson/<world>/<level>` - one playable level of the adventure map.
   static String lessonRoute(String worldId, int level) =>
@@ -125,6 +133,25 @@ class AppRouter {
         path: AppRoutes.quizResults,
         pageBuilder: (BuildContext context, GoRouterState state) =>
             _softPage(child: const QuizResultsPage(), state: state),
+      ),
+      GoRoute(
+        path: AppRoutes.puzzles,
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _softPage(child: const PuzzleMapPage(), state: state),
+      ),
+      GoRoute(
+        path: '${AppRoutes.puzzles}/:index',
+        pageBuilder: (BuildContext context, GoRouterState state) => _softPage(
+          child: PuzzlePlayPage(
+            index: int.tryParse(state.pathParameters['index'] ?? '') ?? 0,
+          ),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.myAnimals,
+        pageBuilder: (BuildContext context, GoRouterState state) =>
+            _softPage(child: const MyAnimalsPage(), state: state),
       ),
     ],
   );

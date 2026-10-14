@@ -66,18 +66,25 @@ class NumberCard extends StatelessWidget {
               ),
             ),
             Center(
-              child: Text(
-                '${number.number}',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  shadows: <Shadow>[
-                    Shadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${number.number}',
+                    maxLines: 1,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      shadows: <Shadow>[
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.20),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

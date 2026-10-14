@@ -11,6 +11,7 @@ class AppSettings extends Equatable {
     this.mascotSpeechEnabled = true,
     this.soundEnabled = true,
     this.voiceEnabled = true,
+    this.reduceMotion = false,
   });
 
   /// Everything on: the default a fresh install starts with.
@@ -31,12 +32,17 @@ class AppSettings extends Equatable {
   /// Voice narration for letters, numbers, quiz questions and fun facts.
   final bool voiceEnabled;
 
+  /// Parent switch: keep only simple fades, never move or scale a surface.
+  /// Off by default; the system reduced-motion flag is honoured regardless.
+  final bool reduceMotion;
+
   AppSettings copyWith({
     bool? animationsEnabled,
     bool? sparklesEnabled,
     bool? mascotSpeechEnabled,
     bool? soundEnabled,
     bool? voiceEnabled,
+    bool? reduceMotion,
   }) {
     return AppSettings(
       animationsEnabled: animationsEnabled ?? this.animationsEnabled,
@@ -44,6 +50,7 @@ class AppSettings extends Equatable {
       mascotSpeechEnabled: mascotSpeechEnabled ?? this.mascotSpeechEnabled,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
+      reduceMotion: reduceMotion ?? this.reduceMotion,
     );
   }
 
@@ -54,5 +61,6 @@ class AppSettings extends Equatable {
         mascotSpeechEnabled,
         soundEnabled,
         voiceEnabled,
+        reduceMotion,
       ];
 }

@@ -8,6 +8,7 @@ import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/mascot/mascot_cubit.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/mascot_view.dart';
 import '../../../../core/widgets/mascot_widget.dart';
@@ -134,9 +135,12 @@ class _QuizPlayView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    // Landscape phones are short: tighten the frame and drop the extra mascot
+    // so the fixed header/prompt can never outgrow the window.
+    final bool compact = Responsive.isShort(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+      padding: EdgeInsets.fromLTRB(20, compact ? 4 : 10, 20, compact ? 10 : 24),
       child: Column(
         children: <Widget>[
           Row(
@@ -187,33 +191,44 @@ class _QuizPlayView extends StatelessWidget {
                   const SizedBox(height: 10),
                   const _RetryPrompt(),
                   const SizedBox(height: 16),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.options.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 1.1,
-                    ),
-                    itemBuilder: (BuildContext context, int index) {
-                      final QuizOption option = state.options[index];
-                      return QuizOptionCard(
-                        key: ValueKey<String>('option-${option.key}'),
-                        option: option,
-                        entrancePhase: index / state.options.length,
-                        isDimmed: state.revealCorrect &&
-                            option.key != state.targetKey,
-                        isWrong: state.wrongOption == option.key,
-                        wrongToken: state.wrongToken,
-                        isCorrect: option.key == state.targetKey,
-                        showCorrect: state.revealCorrect &&
-                            option.key == state.targetKey,
-                        onTap: () => context
-                            .read<QuizBloc>()
-                            .add(OptionSelected(option)),
+                  LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints constraints) {
+                      // Landscape gets a single row of options; portrait uses
+                      // two columns. Either way the tiles stay square and
+                      // shrink with the available width.
+                      final int columns = Responsive.isLandscape(context)
+                          ? state.options.length.clamp(2, 4)
+                          : 2;
+                      final double cellWidth =
+                          (constraints.maxWidth - (columns - 1) * 14) / columns;
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: state.options.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: columns,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                          mainAxisExtent: cellWidth.clamp(96, 240).toDouble(),
+                        ),
+                        itemBuilder: (BuildContext context, int index) {
+                          final QuizOption option = state.options[index];
+                          return QuizOptionCard(
+                            key: ValueKey<String>('option-${option.key}'),
+                            option: option,
+                            entrancePhase: index / state.options.length,
+                            isDimmed: state.revealCorrect &&
+                                option.key != state.targetKey,
+                            isWrong: state.wrongOption == option.key,
+                            wrongToken: state.wrongToken,
+                            isCorrect: option.key == state.targetKey,
+                            showCorrect: state.revealCorrect &&
+                                option.key == state.targetKey,
+                            onTap: () => context
+                                .read<QuizBloc>()
+                                .add(OptionSelected(option)),
+                          );
+                        },
                       );
                     },
                   ),
@@ -222,18 +237,19 @@ class _QuizPlayView extends StatelessWidget {
               ),
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.only(left: 6, top: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: MascotView(
-                key: ValueKey<String>('quiz-mascot'),
-                size: 86,
-                bubbleLayout: MascotBubbleLayout.leading,
-                bubbleMaxWidth: 200,
+          if (!compact)
+            const Padding(
+              padding: EdgeInsets.only(left: 6, top: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: MascotView(
+                  key: ValueKey<String>('quiz-mascot'),
+                  size: 86,
+                  bubbleLayout: MascotBubbleLayout.leading,
+                  bubbleMaxWidth: 200,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -279,11 +295,14 @@ class _RetryPrompt extends StatelessWidget {
                         size: 22,
                       ),
                       SizedBox(width: 8),
-                      Text(
-                        'Oops! Give it another try!',
-                        style: TextStyle(
-                          color: AppColors.quiz,
-                          fontWeight: FontWeight.w700,
+                      Flexible(
+                        child: Text(
+                          'Oops! Give it another try!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.quiz,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],

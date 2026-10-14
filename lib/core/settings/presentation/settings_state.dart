@@ -10,6 +10,7 @@ class SettingsState extends Equatable {
     this.mascotSpeechEnabled = true,
     this.soundEnabled = true,
     this.voiceEnabled = true,
+    this.reduceMotion = false,
     this.isLoaded = false,
   });
 
@@ -24,6 +25,7 @@ class SettingsState extends Equatable {
       mascotSpeechEnabled: settings.mascotSpeechEnabled,
       soundEnabled: settings.soundEnabled,
       voiceEnabled: settings.voiceEnabled,
+      reduceMotion: settings.reduceMotion,
       isLoaded: isLoaded,
     );
   }
@@ -38,6 +40,9 @@ class SettingsState extends Equatable {
   /// Voice narration for letters, numbers, questions and facts.
   final bool voiceEnabled;
 
+  /// Parent "Reduce motion" switch: keep only simple fades.
+  final bool reduceMotion;
+
   /// True once the stored values have been read at least once.
   final bool isLoaded;
 
@@ -47,6 +52,7 @@ class SettingsState extends Equatable {
         mascotSpeechEnabled: mascotSpeechEnabled,
         soundEnabled: soundEnabled,
         voiceEnabled: voiceEnabled,
+        reduceMotion: reduceMotion,
       );
 
   SettingsState copyWith({
@@ -55,6 +61,7 @@ class SettingsState extends Equatable {
     bool? mascotSpeechEnabled,
     bool? soundEnabled,
     bool? voiceEnabled,
+    bool? reduceMotion,
     bool? isLoaded,
   }) {
     return SettingsState(
@@ -63,6 +70,7 @@ class SettingsState extends Equatable {
       mascotSpeechEnabled: mascotSpeechEnabled ?? this.mascotSpeechEnabled,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
+      reduceMotion: reduceMotion ?? this.reduceMotion,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -74,6 +82,7 @@ class SettingsState extends Equatable {
         mascotSpeechEnabled,
         soundEnabled,
         voiceEnabled,
+        reduceMotion,
         isLoaded,
       ];
 }

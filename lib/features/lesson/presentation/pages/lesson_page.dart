@@ -346,24 +346,31 @@ class _LessonFooter extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          SizedBox(
-            height: 30,
+          // Grows with its text and scales down rather than clipping: the old
+          // fixed 30px box overflowed as soon as the label wrapped at large
+          // text scales or on a narrow phone.
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 30),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
               child: feedback == null
                   ? const SizedBox.shrink()
-                  : Text(
-                      feedback!.text,
-                      key: ValueKey<String>(feedback!.text),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Fredoka',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        fontVariations: const <FontVariation>[
-                          FontVariation('wght', 700),
-                        ],
-                        color: feedback!.color,
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        feedback!.text,
+                        key: ValueKey<String>(feedback!.text),
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          fontVariations: const <FontVariation>[
+                            FontVariation('wght', 700),
+                          ],
+                          color: feedback!.color,
+                        ),
                       ),
                     ),
             ),
@@ -502,35 +509,37 @@ class _LessonMessage extends StatelessWidget {
         children: <Widget>[
           const Positioned.fill(child: IllustratedBackground()),
           SafeArea(
-            child: Padding(
-              padding: AppTokens.screenPadding,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(icon, color: AppColors.gold, size: 64),
-                  const SizedBox(height: AppTokens.space4),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'Fredoka',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      fontVariations: <FontVariation>[
-                        FontVariation('wght', 700),
-                      ],
-                      color: AppColors.inkBright,
+            child: Center(
+              child: SingleChildScrollView(
+                padding: AppTokens.screenPadding,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(icon, color: AppColors.gold, size: 64),
+                    const SizedBox(height: AppTokens.space4),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        fontVariations: <FontVariation>[
+                          FontVariation('wght', 700),
+                        ],
+                        color: AppColors.inkBright,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppTokens.space5),
-                  GameButton.large(label: buttonLabel, onPressed: onPressed),
-                  const SizedBox(height: AppTokens.space3),
-                  GameButton.small(
-                    label: 'Back to home',
-                    color: AppColors.accentCoral,
-                    onPressed: () => Navigator.of(context).maybePop(),
-                  ),
-                ],
+                    const SizedBox(height: AppTokens.space5),
+                    GameButton.large(label: buttonLabel, onPressed: onPressed),
+                    const SizedBox(height: AppTokens.space3),
+                    GameButton.small(
+                      label: 'Back to home',
+                      color: AppColors.accentCoral,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -58,13 +58,13 @@ class SettingsView extends StatelessWidget {
       children: <Widget>[
         Text(
           'Grown-up Settings',
-          style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white),
+          style: theme.textTheme.headlineMedium?.copyWith(color: AppColors.ink),
         ),
         const SizedBox(height: 4),
         Text(
           'For parents and carers. No account needed.',
           style: theme.textTheme.titleMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.inkMuted,
           ),
         ),
         const SizedBox(height: 18),
@@ -122,6 +122,16 @@ class SettingsView extends StatelessWidget {
                       'Reading letters, numbers, questions and facts aloud.',
                   value: state.voiceEnabled,
                   onChanged: cubit.setVoiceEnabled,
+                ),
+                const SizedBox(height: 12),
+                _SwitchRow(
+                  icon: Icons.motion_photos_off_rounded,
+                  title: 'Reduce motion',
+                  subtitle:
+                      'Gentle fades only. Your phone\u2019s setting is honoured '
+                      'either way.',
+                  value: state.reduceMotion,
+                  onChanged: cubit.setReduceMotion,
                 ),
               ],
             );

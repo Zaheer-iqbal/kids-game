@@ -16,6 +16,7 @@ dependencies:
   flutter_tts: ^4.0.2
   shared_preferences: ^2.3.2
   equatable: ^2.0.5
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -28,6 +29,8 @@ flutter:
   # Static data only; images and sounds are generated at runtime in code.
   assets:
     - assets/data/
+    # Brand logo pieces, each authored on the shared 380x330 canvas.
+    - assets/logo/
 
   fonts:
     - family: Baloo2

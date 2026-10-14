@@ -7,6 +7,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/widgets/animated_logo.dart';
 import '../../../../core/widgets/game_button.dart';
 import '../../../../core/widgets/illustrated_background.dart';
 import '../../../../core/widgets/mascot_view.dart';
@@ -106,11 +107,21 @@ class _IntroPageState extends State<IntroPage> {
                       onPressed: _skip,
                       child: const Text(
                         'Skip',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppColors.inkMuted),
                       ),
                     ),
                   ),
                 ),
+                // The brand mark opens the intro, then can be tapped to replay
+                // its short assemble animation.
+                AnimatedLogo(
+                  key: const ValueKey<String>('intro-logo'),
+                  size:
+                      (MediaQuery.sizeOf(context).shortestSide * 0.34)
+                          .clamp(96, 132)
+                          .toDouble(),
+                ),
+                const SizedBox(height: AppTokens.space2),
                 Expanded(
                   child: PageView.builder(
                     controller: _pageController,
@@ -130,7 +141,7 @@ class _IntroPageState extends State<IntroPage> {
                       width: i == _page ? 22 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: i == _page ? Colors.white : Colors.white38,
+                        color: i == _page ? AppColors.primary : AppColors.outlineSoft,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );
@@ -182,47 +193,77 @@ class _IntroSlideView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTokens.space6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          if (slide.emoji == '🦉')
-            const MascotView(
-              key: ValueKey<String>('intro-mascot'),
-              size: 168,
-              showBubble: false,
-            )
-          else
-            Container(
-              width: 150,
-              height: 150,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24, width: 3),
-              ),
-              child: Text(slide.emoji, style: const TextStyle(fontSize: 76)),
-            ),
-          const SizedBox(height: AppTokens.space6),
-          Text(
-            slide.title,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.displaySmall?.copyWith(color: Colors.white),
+    // The slide content scrolls when the window is short or the text scale is
+    // large, and the hero graphic scales with the page width so it can never
+    // push the copy off the bottom of a small phone.
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double heroSize =
+            (constraints.maxWidth * 0.5).clamp(96, 168).toDouble();
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.space6,
+            vertical: AppTokens.space3,
           ),
-          const SizedBox(height: AppTokens.space4),
-          Text(
-            slide.body,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.88),
-              fontWeight: FontWeight.w600,
-              height: 1.45,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - AppTokens.space3 * 2)
+                  .clamp(0, double.infinity)
+                  .toDouble(),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                if (slide.emoji == '🦉')
+                  MascotView(
+                    key: const ValueKey<String>('intro-mascot'),
+                    size: heroSize,
+                    showBubble: false,
+                  )
+                else
+                  Container(
+                    width: heroSize,
+                    height: heroSize,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.outlineSoft, width: 3),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          slide.emoji,
+                          style: const TextStyle(fontSize: 76),
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: AppTokens.space6),
+                Text(
+                  slide.title,
+                  textAlign: TextAlign.center,
+                  style:
+                      theme.textTheme.displaySmall?.copyWith(color: AppColors.ink),
+                ),
+                const SizedBox(height: AppTokens.space4),
+                Text(
+                  slide.body,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.inkMuted,
+                    fontWeight: FontWeight.w600,
+                    height: 1.45,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

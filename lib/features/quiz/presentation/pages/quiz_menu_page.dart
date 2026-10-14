@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/pressable_scale.dart';
 import '../../domain/entities/quiz_type.dart';
 
@@ -56,7 +57,7 @@ class QuizMenuView extends StatelessWidget {
             'Choose a Quiz!',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  color: Colors.white,
+                  color: AppColors.ink,
                 ),
           ),
           const SizedBox(height: 8),
@@ -64,25 +65,46 @@ class QuizMenuView extends StatelessWidget {
             'Pick your favorite game to play.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: AppColors.inkMuted,
                 ),
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.only(bottom: 12),
-              itemCount: _modes.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.95,
-              ),
-              itemBuilder: (BuildContext context, int index) {
-                final _QuizMode mode = _modes[index];
-                return _MenuCard(
-                  mode: mode,
-                  onTap: () => context.push(AppRoutes.quizRouteFor(mode.type)),
+            // Column count and cell height are derived from the space the
+            // screen actually has (and the live text scale) so a big
+            // accessibility font grows the cards instead of overflowing them.
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final int columns = Responsive.columnsFor(
+                  constraints,
+                  targetWidth: 150,
+                  spacing: 16,
+                  min: 1,
+                  max: 4,
+                );
+                final double cellWidth =
+                    (constraints.maxWidth - (columns - 1) * 16) / columns;
+                final double scale = MediaQuery.textScalerOf(context).scale(1);
+                final double minHeight = 230 * scale;
+                final double extent =
+                    cellWidth > minHeight ? cellWidth : minHeight;
+                return GridView.builder(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  itemCount: _modes.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    mainAxisExtent: extent,
+                  ),
+                  itemBuilder: (BuildContext context, int index) {
+                    final _QuizMode mode = _modes[index];
+                    return _MenuCard(
+                      mode: mode,
+                      onTap: () =>
+                          context.push(AppRoutes.quizRouteFor(mode.type)),
+                    );
+                  },
                 );
               },
             ),
@@ -169,19 +191,22 @@ class _MenuCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
               Container(
-                width: 56,
-                height: 56,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
                   color: mode.color.withValues(alpha: 0.16),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(mode.icon, color: mode.color, size: 32),
+                child: Icon(mode.icon, color: mode.color, size: 30),
               ),
               const Spacer(),
               Text(
                 mode.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: AppColors.ink,
                   fontWeight: FontWeight.w700,
@@ -190,7 +215,7 @@ class _MenuCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 mode.caption,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.inkMuted,

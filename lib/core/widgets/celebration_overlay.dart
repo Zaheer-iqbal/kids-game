@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../di/injection_container.dart' as di;
 import '../mascot/mascot_cubit.dart';
 import '../mascot/mascot_mood.dart';
+import '../motion/app_motion.dart';
 import '../theme/app_colors.dart';
 import 'delight_settings.dart';
 import 'mascot_painter.dart';
@@ -45,19 +46,12 @@ class _CelebrationDialog extends StatefulWidget {
   State<_CelebrationDialog> createState() => _CelebrationDialogState();
 }
 
-class _CelebrationDialogState extends State<_CelebrationDialog>
-    with TickerProviderStateMixin {
-  late final AnimationController _popController;
+class _CelebrationDialogState extends State<_CelebrationDialog> {
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _popController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 450),
-    );
-    _popController.forward();
     _timer = Timer(widget.autoDismiss, _dismiss);
   }
 
@@ -70,13 +64,11 @@ class _CelebrationDialogState extends State<_CelebrationDialog>
   @override
   void dispose() {
     _timer?.cancel();
-    _popController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     final bool animate = DelightSettings.of(context).animationsEnabled;
 
     return Scaffold(
@@ -104,17 +96,9 @@ class _CelebrationDialogState extends State<_CelebrationDialog>
             behavior: HitTestBehavior.opaque,
             onTap: _dismiss,
             child: Center(
-              child: ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: _popController,
-                  curve: Curves.elasticOut,
-                ),
-                child: FadeTransition(
-                  opacity: CurvedAnimation(
-                    parent: _popController,
-                    curve: const Interval(0.0, 0.6),
-                  ),
-                  child: Column(
+              child: AppMotion(
+                style: MotionPresets.dialogIn,
+                child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Container(
@@ -150,25 +134,40 @@ class _CelebrationDialogState extends State<_CelebrationDialog>
                       ),
                       if (widget.message != null) ...<Widget>[
                         const SizedBox(height: 8),
-                        Text(
-                          widget.message!,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            shadows: const <Shadow>[
-                              Shadow(
-                                color: Color(0x66000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 3),
+                        // A solid white pill with dark ink text always stays
+                        // readable, whatever the light scene behind it.
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: <BoxShadow>[
+                              BoxShadow(
+                                color: const Color(0xFF0F172A)
+                                    .withValues(alpha: 0.18),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6),
                               ),
                             ],
+                          ),
+                          child: Text(
+                            widget.message!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink,
+                              height: 1.2,
+                            ),
                           ),
                         ),
                       ],
                     ],
                   ),
                 ),
-              ),
             ),
           ),
         ],

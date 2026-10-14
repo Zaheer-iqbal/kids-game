@@ -170,30 +170,41 @@ class _NumberDetailSheetState extends State<NumberDetailSheet> {
                     const SizedBox(height: 22),
                     Row(
                       children: <Widget>[
-                        Text(
-                          'Trace the number!',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: AppColors.ink,
+                        Flexible(
+                          child: Text(
+                            'Trace the number!',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: AppColors.ink,
+                            ),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         if (_traced)
-                          const Row(
-                            children: <Widget>[
-                              Icon(
-                                Icons.star_rounded,
-                                color: AppColors.gold,
-                                size: 26,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Traced!',
-                                style: TextStyle(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w700,
+                          const Flexible(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Icon(
+                                  Icons.star_rounded,
+                                  color: AppColors.gold,
+                                  size: 26,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'Traced!',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: AppColors.ink,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                       ],
                     ),

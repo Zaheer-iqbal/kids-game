@@ -14,6 +14,7 @@ class DelightSettings {
   const DelightSettings({
     this.animationsEnabled = true,
     this.sparklesEnabled = true,
+    this.reduceMotion = false,
   });
 
   /// Used when no [DelightScope] is above the widget.
@@ -21,6 +22,9 @@ class DelightSettings {
 
   final bool animationsEnabled;
   final bool sparklesEnabled;
+
+  /// Parent switch: keep only simple fades and never move or scale a surface.
+  final bool reduceMotion;
 
   /// Reads the settings in scope, falling back to everything-on when the widget
   /// is used outside the app shell (tests, previews).
@@ -35,10 +39,12 @@ class DelightSettings {
   bool operator ==(Object other) =>
       other is DelightSettings &&
       other.animationsEnabled == animationsEnabled &&
-      other.sparklesEnabled == sparklesEnabled;
+      other.sparklesEnabled == sparklesEnabled &&
+      other.reduceMotion == reduceMotion;
 
   @override
-  int get hashCode => Object.hash(animationsEnabled, sparklesEnabled);
+  int get hashCode =>
+      Object.hash(animationsEnabled, sparklesEnabled, reduceMotion);
 }
 
 /// Publishes the current settings to the whole widget tree.
@@ -56,12 +62,14 @@ class DelightScope extends StatelessWidget {
     return BlocBuilder<SettingsCubit, SettingsState>(
       buildWhen: (SettingsState previous, SettingsState current) =>
           previous.animationsEnabled != current.animationsEnabled ||
-          previous.sparklesEnabled != current.sparklesEnabled,
+          previous.sparklesEnabled != current.sparklesEnabled ||
+          previous.reduceMotion != current.reduceMotion,
       builder: (BuildContext context, SettingsState state) {
         return _DelightScope(
           settings: DelightSettings(
             animationsEnabled: state.animationsEnabled,
             sparklesEnabled: state.sparklesEnabled,
+            reduceMotion: state.reduceMotion,
           ),
           child: child,
         );

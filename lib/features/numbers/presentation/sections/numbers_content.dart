@@ -7,6 +7,7 @@ import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/mascot/mascot_cubit.dart';
 import '../../../../core/mascot/mascot_mood.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/responsive.dart';
 import '../../domain/entities/number_entity.dart';
 import '../bloc/number_bloc.dart';
 import '../bloc/number_event.dart';
@@ -85,16 +86,20 @@ class NumbersHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Row(
+        // Title on its own line and the stat chips in a Wrap: on a narrow
+        // phone (or at 1.6x text) the chips drop to the next line instead of
+        // squeezing the title into a tall, overflowing multi-line block.
+        Text(
+          '123 Count',
+          style: theme.textTheme.displaySmall?.copyWith(
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
           children: <Widget>[
-            Expanded(
-              child: Text(
-                '123 Count',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -123,7 +128,6 @@ class NumbersHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 14),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -208,30 +212,43 @@ class _NumberGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: const EdgeInsets.only(top: 10, bottom: 24),
-      itemCount: numbers.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 5,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.9,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        final NumberEntity number = numbers[index];
-        return NumberCard(
-          key: ValueKey<String>('number-${number.number}'),
-          number: number,
-          explored: explored.contains('${number.number}'),
-          onTap: () {
-            final bool firstLook = !explored.contains('${number.number}');
-            context.read<NumberBloc>().add(NumberTapped(number));
-            // Quiet (the number is read out loud instead), but a brand new
-            // star gets Pip's excited wiggle.
-            context.read<MascotCubit>().setMood(
-                  firstLook ? MascotMood.excited : MascotMood.happy,
-                );
-            unawaited(NumberDetailSheet.show(context, number));
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // Tiles stay comfortably tappable on a 320px phone (never fewer than
+        // three columns) and spread out on a tablet.
+        final int columns = Responsive.columnsFor(
+          constraints,
+          targetWidth: 68,
+          spacing: 12,
+          min: 3,
+          max: 8,
+        );
+        return GridView.builder(
+          padding: const EdgeInsets.only(top: 10, bottom: 24),
+          itemCount: numbers.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.9,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            final NumberEntity number = numbers[index];
+            return NumberCard(
+              key: ValueKey<String>('number-${number.number}'),
+              number: number,
+              explored: explored.contains('${number.number}'),
+              onTap: () {
+                final bool firstLook = !explored.contains('${number.number}');
+                context.read<NumberBloc>().add(NumberTapped(number));
+                // Quiet (the number is read out loud instead), but a brand new
+                // star gets Pip's excited wiggle.
+                context.read<MascotCubit>().setMood(
+                      firstLook ? MascotMood.excited : MascotMood.happy,
+                    );
+                unawaited(NumberDetailSheet.show(context, number));
+              },
+            );
           },
         );
       },

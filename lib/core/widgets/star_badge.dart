@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../motion/app_motion.dart';
 import '../theme/app_colors.dart';
 import '../theme/design_tokens.dart';
 
@@ -12,6 +13,15 @@ class StarBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Re-key on the count so the star gives a little bounce whenever it grows.
+    return AppMotion(
+      key: ValueKey<String>('star-badge-$count'),
+      style: MotionPresets.rewardStar,
+      child: _pill(context),
+    );
+  }
+
+  Widget _pill(BuildContext context) {
     return Container(
       height: compact ? 34 : 40,
       padding: EdgeInsets.symmetric(
@@ -56,6 +66,17 @@ class StreakBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The flame keeps a gentle heartbeat while a streak is alive.
+    if (days > 0) {
+      return AppMotion(
+        style: MotionPresets.rewardStreak,
+        child: _pill(),
+      );
+    }
+    return _pill();
+  }
+
+  Widget _pill() {
     return Container(
       height: compact ? 34 : 40,
       padding: EdgeInsets.symmetric(
@@ -119,13 +140,10 @@ class RatingStars extends StatelessWidget {
               : null,
         );
         if (animate && filled) {
-          star = TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: 1),
-            duration: Duration(milliseconds: 320 + index * 180),
-            curve: AppTokens.springOut,
-            builder: (BuildContext context, double value, Widget? child) {
-              return Transform.scale(scale: value, child: child);
-            },
+          star = AppMotion(
+            key: ValueKey<String>('rating-star-$earned-$index'),
+            style: MotionPresets.rewardStar,
+            delay: Duration(milliseconds: index * 180),
             child: star,
           );
         }

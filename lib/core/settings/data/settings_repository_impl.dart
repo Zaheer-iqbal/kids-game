@@ -18,6 +18,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String speechKey = 'settings_mascot_speech_enabled';
   static const String soundKey = 'settings_sound_enabled';
   static const String voiceKey = 'settings_voice_enabled';
+  static const String reduceMotionKey = 'settings_reduce_motion';
 
   @override
   AppSettings load() {
@@ -27,6 +28,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       mascotSpeechEnabled: _prefs.getBool(speechKey) ?? true,
       soundEnabled: _prefs.getBool(soundKey) ?? true,
       voiceEnabled: _prefs.getBool(voiceKey) ?? true,
+      reduceMotion: _prefs.getBool(reduceMotionKey) ?? false,
     );
   }
 
@@ -37,5 +39,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
     await _prefs.setBool(speechKey, settings.mascotSpeechEnabled);
     await _prefs.setBool(soundKey, settings.soundEnabled);
     await _prefs.setBool(voiceKey, settings.voiceEnabled);
+    await _prefs.setBool(reduceMotionKey, settings.reduceMotion);
   }
 }

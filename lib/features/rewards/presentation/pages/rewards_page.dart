@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/progress_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/design_tokens.dart';
@@ -33,7 +35,7 @@ class RewardsPage extends StatelessWidget {
       children: <Widget>[
         Text(
           'My Rewards',
-          style: theme.textTheme.displaySmall?.copyWith(color: Colors.white),
+          style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ink),
         ),
         const SizedBox(height: AppTokens.space4),
         StaggerEntrance(
@@ -90,6 +92,16 @@ class RewardsPage extends StatelessWidget {
         const SizedBox(height: AppTokens.space5),
         StaggerEntrance(
           index: 1,
+          child: const _StreakCard(),
+        ),
+        const SizedBox(height: AppTokens.space4),
+        StaggerEntrance(
+          index: 2,
+          child: const _MyAnimalsCard(),
+        ),
+        const SizedBox(height: AppTokens.space5),
+        StaggerEntrance(
+          index: 3,
           child: _BadgeCard(
             title: 'Letter badges',
             caption: '$letters of 26 letters explored',
@@ -269,6 +281,172 @@ class _BadgeCard extends StatelessWidget {
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The daily flame: current streak, progress toward the next milestone and a
+/// claimable chest once a milestone is reached.
+class _StreakCard extends StatefulWidget {
+  const _StreakCard();
+
+  @override
+  State<_StreakCard> createState() => _StreakCardState();
+}
+
+class _StreakCardState extends State<_StreakCard> {
+  bool _justClaimed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ProgressService progress = di.sl<ProgressService>();
+    final int days = progress.streakDays;
+    final int? pending = _justClaimed ? null : progress.pendingStreakMilestone;
+
+    final List<int> upcoming = ProgressService.streakMilestones
+        .where((int m) => m > days)
+        .toList();
+    final int? next = upcoming.isEmpty ? null : upcoming.first;
+
+    return Container(
+      padding: const EdgeInsets.all(AppTokens.space4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppTokens.radiusLarge),
+        boxShadow: AppTokens.softShadow(),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Text(
+                days > 0 ? '🔥' : '🌱',
+                style: const TextStyle(fontSize: 30),
+              ),
+              const SizedBox(width: AppTokens.space2),
+              Text('Daily streak', style: Theme.of(context).textTheme.titleLarge),
+              const Spacer(),
+              StreakBadge(days: days),
+            ],
+          ),
+          const SizedBox(height: AppTokens.space2),
+          Text(
+            days == 0
+                ? 'Play a lesson, quiz or puzzle today to light the flame.'
+                : next == null
+                    ? 'You reached every streak milestone. Amazing!'
+                    : '$days of $next days to the next reward.',
+            style: const TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.inkMuted,
+              height: 1.3,
+            ),
+          ),
+          if (pending != null) ...<Widget>[
+            const SizedBox(height: AppTokens.space3),
+            GestureDetector(
+              onTap: () async {
+                await progress.claimStreakMilestone(pending);
+                if (mounted) setState(() => _justClaimed = true);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.space4,
+                  vertical: AppTokens.space3,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.pastelSun,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                  border: Border.all(color: AppColors.gold, width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Text('🎁', style: TextStyle(fontSize: 22)),
+                    const SizedBox(width: AppTokens.space2),
+                    Text(
+                      'Claim your $days day reward!',
+                      style: const TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.goldInk,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// A shortcut into the animal sticker collection gathered from puzzles.
+class _MyAnimalsCard extends StatelessWidget {
+  const _MyAnimalsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final ProgressService progress = di.sl<ProgressService>();
+    return GestureDetector(
+      onTap: () => context.push(AppRoutes.myAnimals),
+      child: Container(
+        padding: const EdgeInsets.all(AppTokens.space4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppTokens.radiusLarge),
+          boxShadow: AppTokens.softShadow(),
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.accentMint.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(AppTokens.radiusMedium),
+              ),
+              child: const Text('🦁', style: TextStyle(fontSize: 30)),
+            ),
+            const SizedBox(width: AppTokens.space3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text(
+                    'My Animals',
+                    style: TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${progress.solvedPuzzleCount} of 100 collected',
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.inkMuted),
+          ],
+        ),
       ),
     );
   }

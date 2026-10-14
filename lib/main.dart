@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/di/injection_container.dart' as di;
@@ -10,6 +11,9 @@ import 'core/widgets/delight_settings.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The whole app is light: dark icons on the light status and navigation
+  // bars, set once here and re-asserted by every AppBar's theme.
+  SystemChrome.setSystemUIOverlayStyle(AppTheme.overlayStyle);
   await di.configureDependencies();
   runApp(const AlphabetKidsApp());
 }
@@ -27,17 +31,26 @@ class AlphabetKidsApp extends StatelessWidget {
       child: BlocProvider<SettingsCubit>.value(
         value: di.sl<SettingsCubit>(),
         child: MaterialApp.router(
-          title: 'ABC Kids',
+          title: 'Owlie',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
+          // A single light theme, explicitly locked: the phone's dark-mode
+          // setting must never flip a surface to black or a label to white.
+          darkTheme: AppTheme.light,
+          themeMode: ThemeMode.light,
           routerConfig: di.sl<AppRouter>().router,
-          // Kid screens are laid out at 1.0-1.3x; larger system scaling is
-          // capped so text never clips or overflows its cards.
-          builder: (BuildContext context, Widget? child) => DelightScope(
-            child: MediaQuery.withClampedTextScaling(
-              minScaleFactor: 0.85,
-              maxScaleFactor: 1.3,
-              child: child ?? const SizedBox.shrink(),
+          // Kid screens respond down to 1.0x and up to 1.6x. The lower bound
+          // keeps tiny system scales readable; the upper bound stops a runaway
+          // accessibility scale from turning a friendly card into a wall of
+          // glyphs. Every screen is laid out to survive the full range.
+          builder: (BuildContext context, Widget? child) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: AppTheme.overlayStyle,
+            child: DelightScope(
+              child: MediaQuery.withClampedTextScaling(
+                minScaleFactor: 0.85,
+                maxScaleFactor: 1.6,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         ),

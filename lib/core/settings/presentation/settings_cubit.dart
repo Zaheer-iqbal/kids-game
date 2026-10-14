@@ -37,12 +37,16 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void setVoiceEnabled(bool value) => _save(state.copyWith(voiceEnabled: value));
 
+  void setReduceMotion(bool value) => _save(state.copyWith(reduceMotion: value));
+
   void toggleAnimations() => setAnimationsEnabled(!state.animationsEnabled);
 
   void toggleSparkles() => setSparklesEnabled(!state.sparklesEnabled);
 
   void toggleMascotSpeech() =>
       setMascotSpeechEnabled(!state.mascotSpeechEnabled);
+
+  void toggleReduceMotion() => setReduceMotion(!state.reduceMotion);
 
   /// Puts every switch back to on.
   void resetToDefaults() => _save(SettingsState.fromSettings(AppSettings.defaults));

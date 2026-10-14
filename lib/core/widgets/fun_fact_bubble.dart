@@ -25,9 +25,14 @@ class FunFactBubble extends StatelessWidget {
           children: <Widget>[
             const Icon(Icons.lightbulb_rounded, color: AppColors.gold, size: 24),
             const SizedBox(width: 8),
-            Text(
-              'Fun fact!',
-              style: theme.textTheme.titleLarge?.copyWith(color: AppColors.ink),
+            Flexible(
+              child: Text(
+                'Fun fact!',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style:
+                    theme.textTheme.titleLarge?.copyWith(color: AppColors.ink),
+              ),
             ),
           ],
         ),

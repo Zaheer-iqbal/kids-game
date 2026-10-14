@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/quiz_result.dart';
@@ -64,100 +65,128 @@ class QuizResultsPage extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: 110,
-                  height: 110,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: <BoxShadow>[
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+            // One controller fans the whole result in: trophy, score, message
+            // and actions, one after another.
+            child: MotionStagger(
+              itemCount: 5,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  AppMotion(
+                    index: 0,
+                    style: MotionPresets.rewardStar,
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: <BoxShadow>[
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.emoji_events_rounded,
-                    color: AppColors.gold,
-                    size: 62,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  'Quiz complete!',
-                  style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ink),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'You scored ${result.score} of ${result.totalQuestions}',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.ink,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (result.newHighScore) ...<Widget>[
-                  const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(999),
+                      child: const Icon(
+                        Icons.emoji_events_rounded,
+                        color: AppColors.gold,
+                        size: 62,
+                      ),
                     ),
-                    child: Row(
+                  ),
+                  const SizedBox(height: 22),
+                  AppMotion(
+                    index: 1,
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppColors.gold,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 6),
                         Text(
-                          'New best! ${result.bestScore}',
+                          'Quiz complete!',
+                          style: theme.textTheme.displaySmall
+                              ?.copyWith(color: AppColors.ink),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'You scored ${result.score} of ${result.totalQuestions}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          message,
+                          textAlign: TextAlign.center,
                           style: theme.textTheme.titleMedium?.copyWith(
                             color: AppColors.ink,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-                const SizedBox(height: 30),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 14,
-                  runSpacing: 12,
-                  children: <Widget>[
-                    FilledButton.icon(
-                      onPressed: () => context.pushReplacement(
-                        AppRoutes.quizRouteFor(result.type),
+                  if (result.newHighScore) ...<Widget>[
+                    const SizedBox(height: 14),
+                    AppMotion(
+                      index: 2,
+                      style: MotionPresets.celebrateSoft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.gold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            const Icon(
+                              Icons.star_rounded,
+                              color: AppColors.gold,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'New best! ${result.bestScore}',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.ink,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      icon: const Icon(Icons.refresh_rounded, size: 26),
-                      label: const Text('Play Again'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () => context.go(AppRoutes.quizMenu),
-                      icon: const Icon(Icons.quiz_rounded, size: 26),
-                      label: const Text('More Quizzes'),
                     ),
                   ],
-                ),
-              ],
+                  const SizedBox(height: 30),
+                  AppMotion(
+                    index: 3,
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 14,
+                      runSpacing: 12,
+                      children: <Widget>[
+                        FilledButton.icon(
+                          onPressed: () => context.pushReplacement(
+                            AppRoutes.quizRouteFor(result.type),
+                          ),
+                          icon: const Icon(Icons.refresh_rounded, size: 26),
+                          label: const Text('Play Again'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => context.go(AppRoutes.quizMenu),
+                          icon: const Icon(Icons.quiz_rounded, size: 26),
+                          label: const Text('More Quizzes'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
