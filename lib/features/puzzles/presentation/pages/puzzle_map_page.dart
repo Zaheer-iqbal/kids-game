@@ -130,6 +130,16 @@ class _Header extends StatelessWidget {
           ),
           StarBadge(count: state.totalStars),
           GameButton.small(
+            label: 'Resume #${di.sl<ProgressService>().lastPlayedPuzzleIndex + 1}',
+            icon: Icons.play_arrow_rounded,
+            color: AppColors.accentMint,
+            onPressed: () => context.push(
+              AppRoutes.puzzleRoute(
+                di.sl<ProgressService>().lastPlayedPuzzleIndex,
+              ),
+            ),
+          ),
+          GameButton.small(
             label: 'My Animals',
             icon: Icons.pets_rounded,
             color: AppColors.accentPurple,

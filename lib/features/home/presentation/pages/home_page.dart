@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/mascot/mascot_mood.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/services/audio_service.dart';
 import '../../../../core/services/progress_service.dart';
 import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/floating_nav_bar.dart';
 import '../../../../core/widgets/mascot_widget.dart';
+import '../../../puzzles/domain/entities/animal.dart';
+import '../../../puzzles/domain/repositories/puzzle_repository.dart';
 import '../../../puzzles/presentation/pages/puzzle_map_page.dart';
 import '../../../rewards/presentation/pages/rewards_page.dart';
 import '../widgets/owlie_home_widgets.dart';
@@ -282,47 +286,10 @@ class _HomeHub extends StatelessWidget {
             ),
             const SizedBox(width: 8),
 
-            // Right Column: Speech bubble + Owlie mascot
-            Expanded(
+            // Right Column: Interactive Speech bubble + Bouncing Owlie mascot
+            const Expanded(
               flex: 5,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  const SpeechBubbleWidget(text: "Let's play!"),
-                  const SizedBox(height: 2),
-                  Stack(
-                    alignment: Alignment.bottomCenter,
-                    clipBehavior: Clip.none,
-                    children: <Widget>[
-                      // Soft shadow on the ground
-                      Container(
-                        width: 76,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2C3E50).withValues(alpha: 0.12),
-                          borderRadius: const BorderRadius.all(
-                            Radius.elliptical(76, 14),
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          showCelebrationOverlay(
-                            context,
-                            message: "Owlie says: Twit-twoo! Let's learn together! 🦉✨",
-                          );
-                        },
-                        child: const MascotWidget(
-                          mood: MascotMood.idle,
-                          size: 96,
-                          talking: false,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              child: _InteractiveHomeOwlie(),
             ),
           ],
         ),
@@ -435,98 +402,450 @@ class _HomeHub extends StatelessWidget {
   }
 
   Widget _buildAnimalOfDayCard(BuildContext context) {
+    final ProgressService progress = di.sl<ProgressService>();
+    final PuzzleRepository puzzleRepo = di.sl<PuzzleRepository>();
+    final int puzzleIndex = progress.lastPlayedPuzzleIndex;
+    final Animal animal = puzzleRepo.animalAt(puzzleIndex);
+    final int stars = progress.puzzleStars(puzzleIndex);
+    final bool isSolved = stars > 0;
+
     return GestureDetector(
-      onTap: () => context.push('${AppRoutes.puzzles}/0'),
+      onTap: () => context.push('${AppRoutes.puzzles}/$puzzleIndex'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const <BoxShadow>[
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: const Color(0xFFFFECE5),
+            width: 1.5,
+          ),
+          boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Color(0x10000000),
-              blurRadius: 8,
-              offset: Offset(0, 3),
+              color: const Color(0xFFFF6E5B).withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+            const BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
             ),
           ],
         ),
         child: Row(
           children: <Widget>[
-            // Golden circular lion face
+            // Animal Avatar circle with gentle gradient
             Container(
-              width: 38,
-              height: 38,
+              width: 44,
+              height: 44,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFBB624),
-                shape: BoxShape.circle,
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: Color(0x20FBB624),
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Text('🦁', style: TextStyle(fontSize: 21)),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'Animal of the day',
-                    style: TextStyle(
-                      fontFamily: 'Fredoka',
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF23314E),
-                      height: 1,
-                    ),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    'Lion puzzle',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096),
-                      height: 1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Coral "Go" pill button
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF6E5B),
-                borderRadius: BorderRadius.circular(16),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: <Color>[Color(0xFFFFD166), Color(0xFFFBB624)],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
                 boxShadow: const <BoxShadow>[
                   BoxShadow(
-                    color: Color(0x30FF6E5B),
+                    color: Color(0x30FBB624),
                     blurRadius: 6,
                     offset: Offset(0, 2),
                   ),
                 ],
               ),
-              child: const Text(
-                'Go',
-                style: TextStyle(
-                  fontFamily: 'Fredoka',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  height: 1,
+              child: Text(animal.emoji, style: const TextStyle(fontSize: 24)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      const Text(
+                        'Animal of the day',
+                        style: TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF23314E),
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '#${puzzleIndex + 1}',
+                          style: const TextStyle(
+                            fontFamily: 'Fredoka',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF3B82F6),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '${animal.name} puzzle • ${isSolved ? "$stars ⭐ Solved" : "Tap to solve"}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSolved
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF718096),
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Coral / Emerald "Go" or "Play" / "Resume" pill button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isSolved
+                      ? const <Color>[Color(0xFF34D399), Color(0xFF10B981)]
+                      : const <Color>[Color(0xFFFF7E6B), Color(0xFFFF5238)],
                 ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: (isSolved
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFFF5238))
+                        .withValues(alpha: 0.35),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(
+                    isSolved ? Icons.replay_rounded : Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 15,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    isSolved ? 'Replay' : 'Play',
+                    style: const TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      height: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A delightful, interactive, lively Owlie mascot on the Home screen.
+/// Tapping Owlie makes him bounce, chirp sound, show floating sparkles/hearts,
+/// and speak inspiring & funny quotes dynamically without annoying modal popups!
+class _InteractiveHomeOwlie extends StatefulWidget {
+  const _InteractiveHomeOwlie();
+
+  @override
+  State<_InteractiveHomeOwlie> createState() => _InteractiveHomeOwlieState();
+}
+
+class _InteractiveHomeOwlieState extends State<_InteractiveHomeOwlie>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _bounceController;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _jumpAnimation;
+
+  MascotMood _mood = MascotMood.idle;
+  String _speechText = "Let's play!";
+  int _reactionToken = 0;
+  int _giggleToken = 0;
+  int _clickCount = 0;
+  final List<_FloatingParticle> _particles = <_FloatingParticle>[];
+
+  static const List<Map<String, dynamic>> _reactions =
+      <Map<String, dynamic>>[
+    {
+      'text': "Twit-twoo! You're awesome! 🦉⭐",
+      'mood': MascotMood.excited,
+    },
+    {
+      'text': "Ready for an adventure? Let's go! 🚀",
+      'mood': MascotMood.happy,
+    },
+    {
+      'text': "Hehe, that tickles! 😆",
+      'mood': MascotMood.encouraging,
+    },
+    {
+      'text': "You're a super star learner! 🌟",
+      'mood': MascotMood.excited,
+    },
+    {
+      'text': "High five, buddy! 🖐️",
+      'mood': MascotMood.happy,
+    },
+    {
+      'text': "Look at your stars! Keep shining! ✨",
+      'mood': MascotMood.excited,
+    },
+    {
+      'text': "I love learning with you! 💖",
+      'mood': MascotMood.happy,
+    },
+    {
+      'text': "Twit-twoo! Give me a tickle! 🦉",
+      'mood': MascotMood.encouraging,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _scaleAnimation = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: 1.18)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 50,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.18, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticIn)),
+        weight: 50,
+      ),
+    ]).animate(_bounceController);
+
+    _jumpAnimation = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0.0, end: -14.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: -14.0, end: 0.0)
+            .chain(CurveTween(curve: Curves.bounceOut)),
+        weight: 50,
+      ),
+    ]).animate(_bounceController);
+  }
+
+  @override
+  void dispose() {
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  void _onTapOwlie() {
+    HapticFeedback.lightImpact();
+    final AudioService audio = di.sl<AudioService>();
+    audio.playSuccessChime();
+
+    final Map<String, dynamic> reaction =
+        _reactions[_clickCount % _reactions.length];
+    _clickCount++;
+
+    final String text = reaction['text'] as String;
+    final MascotMood newMood = reaction['mood'] as MascotMood;
+
+    // Trigger audio speech
+    audio.speakText(text);
+
+    setState(() {
+      _mood = newMood;
+      _speechText = text;
+      _reactionToken++;
+      _giggleToken++;
+
+      final String emoji =
+          <String>['💖', '⭐', '✨', '🎉', '🌟'][_clickCount % 5];
+      _particles.add(_FloatingParticle(
+        id: DateTime.now().microsecondsSinceEpoch,
+        emoji: emoji,
+      ));
+    });
+
+    _bounceController.forward(from: 0.0);
+
+    // After 2.6s, smoothly revert to idle
+    Future<void>.delayed(const Duration(milliseconds: 2600), () {
+      if (mounted) {
+        setState(() {
+          _mood = MascotMood.idle;
+          _speechText = "Let's play!";
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        // Animated Speech Bubble above Owlie
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            return ScaleTransition(
+              scale: animation,
+              child: FadeTransition(opacity: animation, child: child),
+            );
+          },
+          child: SpeechBubbleWidget(
+            key: ValueKey<String>(_speechText),
+            text: _speechText,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Stack(
+          alignment: Alignment.bottomCenter,
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            // Soft shadow on the ground
+            Container(
+              width: 76,
+              height: 14,
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C3E50).withValues(alpha: 0.12),
+                borderRadius: const BorderRadius.all(
+                  Radius.elliptical(76, 14),
+                ),
+              ),
+            ),
+            // Floating emoji particles
+            ..._particles.map((_FloatingParticle p) {
+              return _ParticleWidget(
+                key: ValueKey<int>(p.id),
+                emoji: p.emoji,
+                onComplete: () {
+                  if (mounted) {
+                    setState(() {
+                      _particles
+                          .removeWhere((_FloatingParticle x) => x.id == p.id);
+                    });
+                  }
+                },
+              );
+            }),
+            // Bouncing Owlie Mascot
+            GestureDetector(
+              onTap: _onTapOwlie,
+              child: AnimatedBuilder(
+                animation: _bounceController,
+                builder: (BuildContext context, Widget? child) {
+                  return Transform.translate(
+                    offset: Offset(0, _jumpAnimation.value),
+                    child: Transform.scale(
+                      scale: _scaleAnimation.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: MascotWidget(
+                  mood: _mood,
+                  size: 96,
+                  reactionToken: _reactionToken,
+                  giggleToken: _giggleToken,
+                  talking: false,
+                  onTap: _onTapOwlie,
+                  onSettle: () {
+                    if (mounted) {
+                      setState(() => _mood = MascotMood.idle);
+                    }
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FloatingParticle {
+  const _FloatingParticle({required this.id, required this.emoji});
+  final int id;
+  final String emoji;
+}
+
+class _ParticleWidget extends StatefulWidget {
+  const _ParticleWidget({
+    super.key,
+    required this.emoji,
+    required this.onComplete,
+  });
+
+  final String emoji;
+  final VoidCallback onComplete;
+
+  @override
+  State<_ParticleWidget> createState() => _ParticleWidgetState();
+}
+
+class _ParticleWidgetState extends State<_ParticleWidget>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..forward().then((_) {
+      if (mounted) widget.onComplete();
+    });
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _ctrl,
+      builder: (BuildContext context, Widget? child) {
+        final double t = _ctrl.value;
+        final double dy = -20 - (t * 45);
+        final double opacity = (1.0 - t).clamp(0.0, 1.0);
+        return Positioned(
+          top: dy,
+          child: Opacity(
+            opacity: opacity,
+            child: Transform.scale(
+              scale: 0.8 + (t * 0.4),
+              child: Text(widget.emoji, style: const TextStyle(fontSize: 20)),
+            ),
+          ),
+        );
+      },
     );
   }
 }
