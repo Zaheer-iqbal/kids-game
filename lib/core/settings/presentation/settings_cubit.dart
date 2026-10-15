@@ -41,6 +41,9 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void setSpeechRate(double value) => _save(state.copyWith(speechRate: value));
 
+  /// Changes the global background theme colour across all screens.
+  void setThemeColor(int index) => _save(state.copyWith(themeColorIndex: index));
+
   /// Chooses a specific device voice, or `null` to go back to the app picking
   /// the best English voice for the device.
   void setVoiceName(String? value) => _save(

@@ -42,7 +42,6 @@ class QuizView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: BlocListener<QuizBloc, QuizState>(
           listenWhen: (QuizState previous, QuizState current) =>

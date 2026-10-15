@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
-import '../../../../core/router/app_router.dart';
 import '../../../../core/services/progress_service.dart';
+import '../../../../core/settings/presentation/settings_cubit.dart';
+import '../../../../core/settings/presentation/settings_state.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/mascot_widget.dart';
 import '../../../../core/mascot/mascot_mood.dart';
@@ -23,7 +23,6 @@ class OwlieRoomPage extends StatefulWidget {
 
 class _OwlieRoomPageState extends State<OwlieRoomPage> {
   int _selectedHat = 0;
-  int _selectedRoom = 0;
   String _selectedFestival = 'Eid';
   bool _missionCompleted = false;
 
@@ -36,20 +35,18 @@ class _OwlieRoomPageState extends State<OwlieRoomPage> {
     <String, dynamic>{'name': 'Wizard', 'emoji': '🧙'},
   ];
 
-  final List<Map<String, dynamic>> _rooms = <Map<String, dynamic>>[
-    <String, dynamic>{'name': 'Sunny Garden', 'color': Color(0xFFD6F2D9), 'icon': '🌻'},
-    <String, dynamic>{'name': 'Starry Sky', 'color': Color(0xFFDCEAFE), 'icon': '✨'},
-    <String, dynamic>{'name': 'Candy Land', 'color': Color(0xFFFDE8E8), 'icon': '🍭'},
-    <String, dynamic>{'name': 'Cozy Nest', 'color': Color(0xFFFEF3C7), 'icon': '🪺'},
-  ];
-
   @override
   Widget build(BuildContext context) {
     final ProgressService progress = di.sl<ProgressService>();
 
-    return Scaffold(
-      backgroundColor: _rooms[_selectedRoom]['color'] as Color,
-      body: SafeArea(
+    return BlocBuilder<SettingsCubit, SettingsState>(
+      builder: (BuildContext context, SettingsState settings) {
+        final AppThemeOption roomTheme =
+            AppThemeColors.get(settings.themeColorIndex);
+
+        return Scaffold(
+          backgroundColor: roomTheme.bg,
+          body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
           children: <Widget>[
@@ -210,44 +207,73 @@ class _OwlieRoomPageState extends State<OwlieRoomPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: List<Widget>.generate(_rooms.length, (int i) {
-                      final bool active = _selectedRoom == i;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedRoom = i),
-                          child: Container(
-                            margin: EdgeInsets.only(right: i < _rooms.length - 1 ? 6 : 0),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              color: _rooms[i]['color'] as Color,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: active ? const Color(0xFF4C3FB5) : Colors.transparent,
-                                width: 2.5,
-                              ),
-                            ),
-                            child: Column(
-                              children: <Widget>[
-                                Text(_rooms[i]['icon'] as String, style: const TextStyle(fontSize: 18)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _rooms[i]['name'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontFamily: 'Nunito',
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1E293B),
+                  // ── Theme picker wired to SettingsCubit ───────────────
+                  BlocBuilder<SettingsCubit, SettingsState>(
+                    builder: (BuildContext ctx, SettingsState s) {
+                      return Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: List<Widget>.generate(
+                          AppThemeColors.themes.length,
+                          (int i) {
+                            final AppThemeOption opt = AppThemeColors.themes[i];
+                            final bool active = s.themeColorIndex == i;
+                            return GestureDetector(
+                              onTap: () {
+                                context
+                                    .read<SettingsCubit>()
+                                    .setThemeColor(i);
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 90,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: opt.bg,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: active
+                                        ? const Color(0xFF4C3FB5)
+                                        : Colors.transparent,
+                                    width: 2.5,
                                   ),
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: Colors.black
+                                          .withValues(alpha: active ? 0.14 : 0.06),
+                                      blurRadius: active ? 8 : 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
+                                child: Column(
+                                  children: <Widget>[
+                                    Text(opt.icon,
+                                        style: const TextStyle(fontSize: 20)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      opt.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'Nunito',
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: active
+                                            ? const Color(0xFF4C3FB5)
+                                            : const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       );
-                    }),
+                    },
                   ),
                 ],
               ),
@@ -410,6 +436,8 @@ class _OwlieRoomPageState extends State<OwlieRoomPage> {
         ),
       ),
     );
+  },
+);
   }
 
   Widget _buildSectionCard({

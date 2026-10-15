@@ -18,7 +18,6 @@ class QuizResultsPage extends StatelessWidget {
 
     if (result == null) {
       return Scaffold(
-        backgroundColor: AppColors.background,
         body: SafeArea(
           child: Center(
             child: Column(
@@ -60,7 +59,6 @@ class QuizResultsPage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
           child: Padding(

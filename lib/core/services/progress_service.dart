@@ -120,6 +120,30 @@ class ProgressService {
   /// after the bonus fires or when a hint is used).
   int get hintlessPuzzleStreak => _prefs.getInt(_puzzleHintStreakKey) ?? 0;
 
+  static const String _lastPuzzleIndexKey = 'last_played_puzzle_index';
+
+  /// Index of the puzzle the child last played, or the next unlocked one.
+  int get lastPlayedPuzzleIndex {
+    final int? saved = _prefs.getInt(_lastPuzzleIndexKey);
+    if (saved != null && saved >= 0 && saved < 100) {
+      return saved;
+    }
+    return nextUnlockedPuzzleIndex;
+  }
+
+  /// Finds the first unsolved puzzle (0-99).
+  int get nextUnlockedPuzzleIndex {
+    for (int i = 0; i < 100; i++) {
+      if (puzzleStars(i) == 0) return i;
+    }
+    return 0;
+  }
+
+  /// Saves the last visited or active puzzle.
+  Future<void> recordLastPlayedPuzzle(int index) async {
+    await _prefs.setInt(_lastPuzzleIndexKey, index.clamp(0, 99));
+  }
+
   /// Records a solved puzzle and returns true when the hint-free bonus star
   /// fired (three in a row without a hint).
   Future<bool> recordPuzzleSolved(
@@ -129,6 +153,9 @@ class ProgressService {
   }) async {
     if (stars > puzzleStars(puzzleIndex)) {
       await _prefs.setInt('$_puzzleStarsPrefix$puzzleIndex', stars);
+    }
+    if (puzzleIndex < 99) {
+      await recordLastPlayedPuzzle(puzzleIndex + 1);
     }
     // Solving a puzzle always counts as today's play.
     await recordDailyActivity();

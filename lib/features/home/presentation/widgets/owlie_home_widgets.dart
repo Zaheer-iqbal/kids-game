@@ -601,9 +601,9 @@ class GreenHillBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: <Widget>[
-        // Sky blue background
-        const Positioned.fill(
-          child: ColoredBox(color: Color(0xFFE4F0FD)),
+        // Theme background (dynamic from profile / settings)
+        Positioned.fill(
+          child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor),
         ),
         // Bottom rolling green hill
         Positioned(

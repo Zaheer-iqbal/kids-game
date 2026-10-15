@@ -24,7 +24,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgTop,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: <Widget>[
@@ -75,9 +75,110 @@ class SettingsView extends StatelessWidget {
         const _MascotPreview(),
         const SizedBox(height: 22),
         Text(
+          'App Background Theme',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: AppColors.ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 12),
+        BlocBuilder<SettingsCubit, SettingsState>(
+          buildWhen: (SettingsState prev, SettingsState next) =>
+              prev.themeColorIndex != next.themeColorIndex,
+          builder: (BuildContext context, SettingsState state) {
+            final SettingsCubit cubit = context.read<SettingsCubit>();
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xDDEFDFCF), width: 2),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Changes background color across all screens:',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List<Widget>.generate(
+                      AppThemeColors.themes.length,
+                      (int i) {
+                        final AppThemeOption opt = AppThemeColors.themes[i];
+                        final bool active = state.themeColorIndex == i;
+                        return GestureDetector(
+                          onTap: () => cubit.setThemeColor(i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            width: 90,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: opt.bg,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: active
+                                    ? const Color(0xFF4C3FB5)
+                                    : const Color(0xFFE2E8F0),
+                                width: active ? 2.5 : 1.5,
+                              ),
+                              boxShadow: <BoxShadow>[
+                                BoxShadow(
+                                  color: Colors.black
+                                      .withValues(alpha: active ? 0.12 : 0.04),
+                                  blurRadius: active ? 6 : 2,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: <Widget>[
+                                Text(opt.icon,
+                                    style: const TextStyle(fontSize: 20)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  opt.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Nunito',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: active
+                                        ? const Color(0xFF4C3FB5)
+                                        : const Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 22),
+        Text(
           'Mascot & Effects',
           style: theme.textTheme.titleLarge?.copyWith(
-            color: Colors.white,
+            color: AppColors.ink,
             fontWeight: FontWeight.w700,
           ),
         ),

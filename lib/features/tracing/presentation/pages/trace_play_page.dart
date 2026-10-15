@@ -115,13 +115,16 @@ class _TracePlayPageState extends State<TracePlayPage>
     final ThemeData theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: <Color>[AppColors.bgTop, AppColors.background],
+            colors: <Color>[
+              theme.scaffoldBackgroundColor.withValues(alpha: 0.85),
+              theme.scaffoldBackgroundColor,
+            ],
           ),
         ),
         child: SafeArea(

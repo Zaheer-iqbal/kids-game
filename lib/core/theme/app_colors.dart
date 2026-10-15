@@ -120,3 +120,69 @@ abstract final class AppColors {
     return letterPalette[index.clamp(0, letterPalette.length - 1)];
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+/// Six selectable background themes. Index 0 = default warm cream (unchanged
+/// look), the rest are fun alternatives the child can pick from the profile.
+// ─────────────────────────────────────────────────────────────────────────────
+abstract final class AppThemeColors {
+  static const List<AppThemeOption> themes = <AppThemeOption>[
+    AppThemeOption(
+      name: 'Sunny Garden',
+      icon: '🌻',
+      bg: Color(0xFFFFF8E7),
+      bgTop: Color(0xFFEAF6FF),
+    ),
+    AppThemeOption(
+      name: 'Starry Sky',
+      icon: '✨',
+      bg: Color(0xFFEEF2FF),
+      bgTop: Color(0xFFDCEAFE),
+    ),
+    AppThemeOption(
+      name: 'Candy Land',
+      icon: '🍭',
+      bg: Color(0xFFFFF0F6),
+      bgTop: Color(0xFFFDE8E8),
+    ),
+    AppThemeOption(
+      name: 'Cozy Nest',
+      icon: '🪺',
+      bg: Color(0xFFFFFBEC),
+      bgTop: Color(0xFFFEF3C7),
+    ),
+    AppThemeOption(
+      name: 'Ocean Breeze',
+      icon: '🌊',
+      bg: Color(0xFFEEFBFD),
+      bgTop: Color(0xFFCCF2F4),
+    ),
+    AppThemeOption(
+      name: 'Lavender Dream',
+      icon: '💜',
+      bg: Color(0xFFF5F0FF),
+      bgTop: Color(0xFFEDE9FE),
+    ),
+  ];
+
+  static AppThemeOption get(int index) =>
+      themes[index.clamp(0, themes.length - 1)];
+}
+
+class AppThemeOption {
+  const AppThemeOption({
+    required this.name,
+    required this.icon,
+    required this.bg,
+    required this.bgTop,
+  });
+
+  final String name;
+  final String icon;
+
+  /// Solid page background (used by most content screens).
+  final Color bg;
+
+  /// Top of the sky gradient (used by splash/home/tracing).
+  final Color bgTop;
+}

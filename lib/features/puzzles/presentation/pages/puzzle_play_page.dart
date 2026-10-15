@@ -33,6 +33,7 @@ class PuzzlePlayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    di.sl<ProgressService>().recordLastPlayedPuzzle(index);
     return BlocProvider<PuzzleBloc>(
       create: (BuildContext context) => PuzzleBloc(
         repository: di.sl<PuzzleRepository>(),

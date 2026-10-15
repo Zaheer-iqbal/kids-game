@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/services/audio_service.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../tracing/presentation/pages/trace_play_page.dart';
 import '../../domain/entities/number_entity.dart';
 import '../../domain/repositories/number_repository.dart';
@@ -31,7 +30,6 @@ class _NumberTracePageState extends State<NumberTracePage> {
         final List<NumberEntity> numbers = snapshot.data ?? const <NumberEntity>[];
         if (numbers.isEmpty) {
           return const Scaffold(
-            backgroundColor: AppColors.background,
             body: Center(child: CircularProgressIndicator()),
           );
         }

@@ -48,4 +48,11 @@ class SettingsRepositoryImpl implements SettingsRepository {
     await _prefs.setBool(reduceMotionKey, settings.reduceMotion);
     await _prefs.setDouble(speechRateKey, settings.speechRate);
     await _prefs.setInt(themeColorKey, settings.themeColorIndex);
-    fina
+    final String? voiceName = settings.voiceName;
+    if (voiceName == null) {
+      await _prefs.remove(voiceNameKey);
+    } else {
+      await _prefs.setString(voiceNameKey, voiceName);
+    }
+  }
+}

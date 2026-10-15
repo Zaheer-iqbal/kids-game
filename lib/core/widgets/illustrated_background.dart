@@ -30,25 +30,27 @@ class IllustratedBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (scrollOffset == null) {
-      return RepaintBoundary(child: _buildCanvas(0));
+      return RepaintBoundary(child: _buildCanvas(context, 0));
     }
 
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: scrollOffset!,
         builder: (BuildContext context, Widget? child) =>
-            _buildCanvas(scrollOffset!.value),
+            _buildCanvas(context, scrollOffset!.value),
       ),
     );
   }
 
-  Widget _buildCanvas(double parallax) {
+  Widget _buildCanvas(BuildContext context, double parallax) {
+    final Color bgColor = Theme.of(context).scaffoldBackgroundColor;
     return CustomPaint(
       painter: _WorldPainter(
         parallax: parallax,
         showHills: hills,
         showClouds: clouds,
         showStars: stars,
+        bgColor: bgColor,
       ),
       child: const SizedBox.expand(),
     );
@@ -61,7 +63,10 @@ class _WorldPainter extends CustomPainter {
     required this.showHills,
     required this.showClouds,
     required this.showStars,
+    this.bgColor,
   });
+
+  final Color? bgColor;
 
   final double parallax;
   final bool showHills;
@@ -89,18 +94,18 @@ class _WorldPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Daylight gradient: soft sky into warm cream.
+    final Color base = bgColor ?? AppColors.bgBottom;
     final Rect rect = Offset.zero & size;
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: <Color>[
-            AppColors.bgTop,
-            AppColors.bgBottom,
-            AppColors.bgGradientEnd,
+            base.withValues(alpha: 0.7),
+            base,
+            base,
           ],
         ).createShader(rect),
     );
@@ -204,7 +209,8 @@ class _WorldPainter extends CustomPainter {
       oldDelegate.parallax != parallax ||
       oldDelegate.showHills != showHills ||
       oldDelegate.showClouds != showClouds ||
-      oldDelegate.showStars != showStars;
+      oldDelegate.showStars != showStars ||
+      oldDelegate.bgColor != bgColor;
 }
 
 class _Cloud {

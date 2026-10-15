@@ -13,6 +13,7 @@ class SettingsState extends Equatable {
     this.reduceMotion = false,
     this.speechRate = AppSettings.defaultSpeechRate,
     this.voiceName,
+    this.themeColorIndex = 0,
     this.isLoaded = false,
   });
 
@@ -30,6 +31,7 @@ class SettingsState extends Equatable {
       reduceMotion: settings.reduceMotion,
       speechRate: settings.speechRate,
       voiceName: settings.voiceName,
+      themeColorIndex: settings.themeColorIndex,
       isLoaded: isLoaded,
     );
   }
@@ -53,6 +55,9 @@ class SettingsState extends Equatable {
   /// The voice the parent picked, or `null` to auto-select the best English.
   final String? voiceName;
 
+  /// Global background theme index. Mirrors [AppSettings.themeColorIndex].
+  final int themeColorIndex;
+
   /// True once the stored values have been read at least once.
   final bool isLoaded;
 
@@ -65,6 +70,7 @@ class SettingsState extends Equatable {
         reduceMotion: reduceMotion,
         speechRate: speechRate,
         voiceName: voiceName,
+        themeColorIndex: themeColorIndex,
       );
 
   SettingsState copyWith({
@@ -77,6 +83,7 @@ class SettingsState extends Equatable {
     double? speechRate,
     String? voiceName,
     bool clearVoiceName = false,
+    int? themeColorIndex,
     bool? isLoaded,
   }) {
     return SettingsState(
@@ -88,6 +95,7 @@ class SettingsState extends Equatable {
       reduceMotion: reduceMotion ?? this.reduceMotion,
       speechRate: speechRate ?? this.speechRate,
       voiceName: clearVoiceName ? null : (voiceName ?? this.voiceName),
+      themeColorIndex: themeColorIndex ?? this.themeColorIndex,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -102,6 +110,7 @@ class SettingsState extends Equatable {
         reduceMotion,
         speechRate,
         voiceName,
+        themeColorIndex,
         isLoaded,
       ];
 }
