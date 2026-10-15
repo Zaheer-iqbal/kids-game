@@ -9,65 +9,108 @@ class FunFactBubble extends StatelessWidget {
     super.key,
     required this.fact,
     required this.onHearFact,
+    this.accentColor,
   });
 
   final String fact;
   final VoidCallback onHearFact;
 
+  /// Optional accent color for the bubble border and icon tint.
+  final Color? accentColor;
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final Color accent = accentColor ?? AppColors.gold;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        // ── Header row ────────────────────────────────────────────────
         Row(
           children: <Widget>[
-            const Icon(Icons.lightbulb_rounded, color: AppColors.gold, size: 24),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Fun fact!',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    theme.textTheme.titleLarge?.copyWith(color: AppColors.ink),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.lightbulb_rounded, color: accent, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Fun Fact!',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ],
         ),
+
         const SizedBox(height: 10),
+
+        // ── Bubble card ───────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: <Color>[
+                Colors.white,
+                accent.withValues(alpha: 0.06),
+              ],
+            ),
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(22),
+              topLeft: Radius.circular(6),
               topRight: Radius.circular(22),
               bottomLeft: Radius.circular(22),
-              bottomRight: Radius.circular(8),
+              bottomRight: Radius.circular(22),
+            ),
+            border: Border.all(
+              color: accent.withValues(alpha: 0.30),
+              width: 1.5,
             ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
+                color: accent.withValues(alpha: 0.12),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Text(
             fact,
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: theme.textTheme.bodyLarge?.copyWith(
               color: AppColors.ink,
               fontWeight: FontWeight.w600,
+              height: 1.55,
             ),
           ),
         ),
-        const SizedBox(height: 10),
+
+        const SizedBox(height: 12),
+
+        // ── Hear button ───────────────────────────────────────────────
         Align(
           alignment: Alignment.centerRight,
-          child: OutlinedButton.icon(
+          child: FilledButton.icon(
             onPressed: onHearFact,
+            style: FilledButton.styleFrom(
+              backgroundColor: accent.withValues(alpha: 0.14),
+              foregroundColor: accent,
+              elevation: 0,
+              textStyle: const TextStyle(
+                fontFamily: 'Fredoka',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
             icon: const Icon(Icons.volume_up_rounded, size: 22),
             label: const Text('Hear fun fact'),
           ),

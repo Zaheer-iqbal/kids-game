@@ -39,6 +39,16 @@ class SettingsCubit extends Cubit<SettingsState> {
 
   void setReduceMotion(bool value) => _save(state.copyWith(reduceMotion: value));
 
+  void setSpeechRate(double value) => _save(state.copyWith(speechRate: value));
+
+  /// Chooses a specific device voice, or `null` to go back to the app picking
+  /// the best English voice for the device.
+  void setVoiceName(String? value) => _save(
+        value == null
+            ? state.copyWith(clearVoiceName: true)
+            : state.copyWith(voiceName: value),
+      );
+
   void toggleAnimations() => setAnimationsEnabled(!state.animationsEnabled);
 
   void toggleSparkles() => setSparklesEnabled(!state.sparklesEnabled);

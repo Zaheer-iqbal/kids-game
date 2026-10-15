@@ -19,6 +19,7 @@ class QuizOptionCard extends StatefulWidget {
     required this.showCorrect,
     required this.onTap,
     this.entrancePhase = 0,
+    this.isHidden = false,
   });
 
   final QuizOption option;
@@ -31,6 +32,10 @@ class QuizOptionCard extends StatefulWidget {
 
   /// 0..1 stagger so cards pop in one after another on a new question.
   final double entrancePhase;
+
+  /// True once a hint has removed this (wrong) option: it fades away and can
+  /// no longer be tapped.
+  final bool isHidden;
 
   @override
   State<QuizOptionCard> createState() => _QuizOptionCardState();
@@ -154,32 +159,43 @@ class _QuizOptionCardState extends State<QuizOptionCard>
   Widget build(BuildContext context) {
     final bool revealed = widget.showCorrect && widget.isCorrect;
 
-    return PressableScale(
-      onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: Listenable.merge(<Listenable>[
-          _shakeController,
-          _popController,
-          _entranceController,
-        ]),
-        builder: (BuildContext context, Widget? child) {
-          return Transform.translate(
-            offset: Offset(_shakeOffset.value, 0),
-            child: Transform.rotate(
-              angle: _entranceAngle.value,
-              child: Transform.scale(
-                scale: (0.7 + 0.3 * _entranceProgress.value) *
-                    (0.9 + 0.1 * Curves.easeOutBack.transform(_popController.value)),
-                child: child,
-              ),
+    return IgnorePointer(
+      ignoring: widget.isHidden,
+      child: AnimatedOpacity(
+        opacity: widget.isHidden ? 0 : 1,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        child: PressableScale(
+          onTap: widget.onTap,
+          child: AnimatedBuilder(
+            animation: Listenable.merge(<Listenable>[
+              _shakeController,
+              _popController,
+              _entranceController,
+            ]),
+            builder: (BuildContext context, Widget? child) {
+              return Transform.translate(
+                offset: Offset(_shakeOffset.value, 0),
+                child: Transform.rotate(
+                  angle: _entranceAngle.value,
+                  child: Transform.scale(
+                    scale: (0.7 + 0.3 * _entranceProgress.value) *
+                        (0.9 +
+                            0.1 *
+                                Curves.easeOutBack
+                                    .transform(_popController.value)),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: _OptionFace(
+              option: widget.option,
+              isDimmed: widget.isDimmed,
+              isWrong: widget.isWrong,
+              revealed: revealed,
             ),
-          );
-        },
-        child: _OptionFace(
-          option: widget.option,
-          isDimmed: widget.isDimmed,
-          isWrong: widget.isWrong,
-          revealed: revealed,
+          ),
         ),
       ),
     );

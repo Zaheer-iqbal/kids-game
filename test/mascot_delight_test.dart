@@ -22,7 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Stands in for the platform TTS so these tests stay silent and fast.
 class _SilentAudioService extends AudioService {
   @override
-  Future<void> speakText(String text) async {}
+  Future<void> speakText(String text, {String? clipKey}) async {}
 }
 
 typedef _Harness = ({MascotCubit mascot, SettingsCubit settings});

@@ -1,21 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
-import '../../../../core/mascot/mascot_cubit.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/services/fun_facts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/emoji_picture.dart';
 import '../../../../core/widgets/fun_fact_bubble.dart';
-import '../../../../core/widgets/tracing_canvas.dart';
 import '../../domain/entities/letter_item.dart';
 
-/// Bottom sheet shown when a letter card is tapped: the big letter with its
-/// emoji picture, the "A for Apple" phrase, a replay button and an in-sheet
-/// finger-tracing canvas.
+/// Full-screen modal shown when a letter card is tapped.
+/// Shows the big letter + animal picture, phonics replay, a fun-fact bubble,
+/// and a pinned "Trace it!" button at the very bottom.
 class LetterDetailSheet extends StatefulWidget {
   const LetterDetailSheet({super.key, required this.letter});
 
@@ -25,13 +24,10 @@ class LetterDetailSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black38,
-      builder: (BuildContext sheetContext) => FractionallySizedBox(
-        alignment: Alignment.bottomCenter,
-        heightFactor: 0.86,
-        child: LetterDetailSheet(letter: letter),
-      ),
+      barrierColor: Colors.black54,
+      builder: (BuildContext sheetContext) => LetterDetailSheet(letter: letter),
     );
   }
 
@@ -39,23 +35,35 @@ class LetterDetailSheet extends StatefulWidget {
   State<LetterDetailSheet> createState() => _LetterDetailSheetState();
 }
 
-class _LetterDetailSheetState extends State<LetterDetailSheet> {
-  bool _traced = false;
+class _LetterDetailSheetState extends State<LetterDetailSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 380),
+  );
+  late final Animation<double> _scaleAnim = CurvedAnimation(
+    parent: _animCtrl,
+    curve: Curves.elasticOut,
+  );
 
-  void _replaySound() {
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl.forward();
+    // Auto-play phonics when sheet opens
     unawaited(di.sl<AudioService>()
         .speakPhonics(widget.letter.letter, widget.letter.word));
   }
 
-  void _onTraceCompleted() {
-    setState(() => _traced = true);
-    // Tracing the whole letter is a milestone: Pip jumps and says exactly
-    // "Great job!", then the confetti and the star appear.
-    di.sl<MascotCubit>().excited(speak: true, message: 'Great job!');
-    unawaited(showCelebrationOverlay(
-      context,
-      message: 'Great job!',
-    ));
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  void _replaySound() {
+    unawaited(di.sl<AudioService>()
+        .speakPhonics(widget.letter.letter, widget.letter.word));
   }
 
   void _hearFact() {
@@ -67,142 +75,153 @@ class _LetterDetailSheetState extends State<LetterDetailSheet> {
   Widget build(BuildContext context) {
     final Color color = Color(widget.letter.colorValue);
     final ThemeData theme = Theme.of(context);
+    final String fact = FunFacts.forLetter(widget.letter.letter);
 
-    return SafeArea(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const SizedBox(height: 12),
-            Container(
-              width: 48,
-              height: 5,
-              decoration: BoxDecoration(
-                color: AppColors.ink.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(99),
-              ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Column(
+        children: <Widget>[
+          // ── drag handle ────────────────────────────────────────────────
+          const SizedBox(height: 12),
+          Container(
+            width: 48,
+            height: 5,
+            decoration: BoxDecoration(
+              color: AppColors.ink.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(99),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 8, 4),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Row(
-                      children: <Widget>[
-                        _LetterBadge(letter: widget.letter.letter, color: color),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Text(
-                                widget.letter.label,
-                                style: theme.textTheme.headlineSmall
-                                    ?.copyWith(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              EmojiPicture(
-                                emoji: widget.letter.emoji,
-                                color: color,
-                                fontSize: 54,
-                              ),
-                            ],
-                          ),
+          ),
+
+          // ── header: badge + label + close ─────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 12, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // animated letter badge
+                ScaleTransition(
+                  scale: _scaleAnim,
+                  child: _LetterBadge(letter: widget.letter.letter, color: color),
+                ),
+                const SizedBox(width: 16),
+                // label + large emoji
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        widget.letter.label,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w800,
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Large animal / object emoji shown prominently
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: EmojiPicture(
+                          emoji: widget.letter.emoji,
+                          color: color,
+                          fontSize: 72,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // close button
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded, size: 30),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
+          ),
+
+          // ── scrollable body ────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  // Hear Again
+                  FilledButton.icon(
+                    onPressed: _replaySound,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: color.withValues(alpha: 0.18),
+                      foregroundColor: color,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(54),
+                      textStyle: const TextStyle(
+                        fontFamily: 'Fredoka',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
+                    icon: const Icon(Icons.volume_up_rounded, size: 26),
+                    label: const Text('Hear it again'),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded, size: 30),
-                    tooltip: 'Close',
+
+                  const SizedBox(height: 20),
+
+                  // Fun Fact bubble
+                  FunFactBubble(
+                    fact: fact,
+                    onHearFact: _hearFact,
+                    accentColor: color,
                   ),
+
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    FilledButton.icon(
-                      onPressed: _replaySound,
-                      icon: const Icon(Icons.volume_up_rounded, size: 26),
-                      label: const Text('Hear again'),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: <Widget>[
-                        Text(
-                          'Trace it!',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: AppColors.ink,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (_traced)
-                          const Row(
-                            children: <Widget>[
-                              Icon(
-                                Icons.star_rounded,
-                                color: AppColors.gold,
-                                size: 26,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'Traced!',
-                                style: TextStyle(
-                                  color: AppColors.ink,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      height: 210,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: TracingCanvas(
-                        label: widget.letter.letter,
-                        color: color,
-                        onCompleted: _onTraceCompleted,
-                        onReset: () => setState(() => _traced = false),
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    FunFactBubble(
-                      fact: FunFacts.forLetter(widget.letter.letter),
-                      onHearFact: _hearFact,
-                    ),
-                  ],
+          ),
+
+          // ── pinned Trace It button at the very bottom ──────────────────
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.push(AppRoutes.letterTrace(widget.letter.letter));
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(62),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                textStyle: const TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
+              icon: const Icon(Icons.gesture_rounded, size: 30),
+              label: const Text('Trace it!'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -218,22 +237,29 @@ class _LetterBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 74,
-      height: 74,
+      width: 86,
+      height: 86,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: <Color>[color, Color.lerp(color, Colors.white, 0.25)!],
+          colors: <Color>[color, Color.lerp(color, Colors.white, 0.3)!],
         ),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: color.withValues(alpha: 0.45),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Text(
         letter,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 46,
+          fontSize: 52,
           fontWeight: FontWeight.w800,
           height: 1,
         ),

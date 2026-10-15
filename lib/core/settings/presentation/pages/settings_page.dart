@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../di/injection_container.dart' as di;
+import '../../../services/audio_service.dart';
 import '../../../theme/app_colors.dart';
 import '../../../widgets/mascot_view.dart';
+import '../../../widgets/parental_gate.dart';
+import '../../domain/app_settings.dart';
 import '../settings_cubit.dart';
 import '../settings_state.dart';
 
@@ -137,6 +141,8 @@ class SettingsView extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: 22),
+        const _VoiceControlsCard(),
         const SizedBox(height: 22),
         OutlinedButton.icon(
           onPressed: () => context.read<SettingsCubit>().resetToDefaults(),
@@ -279,6 +285,211 @@ class _SwitchRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Voice picker and speaking-speed slider, kept behind the grown-up gate so a
+/// curious child cannot change how the app sounds. The voice list comes from
+/// the device engine, so a parent chooses from real voices, not a fixed set.
+class _VoiceControlsCard extends StatefulWidget {
+  const _VoiceControlsCard();
+
+  @override
+  State<_VoiceControlsCard> createState() => _VoiceControlsCardState();
+}
+
+class _VoiceControlsCardState extends State<_VoiceControlsCard> {
+  bool _unlocked = false;
+  Future<List<String>>? _voices;
+
+  Future<void> _unlock() async {
+    final bool allowed = await showParentalGate(context);
+    if (!allowed || !mounted) return;
+    setState(() {
+      _unlocked = true;
+      _voices = di.sl<AudioService>().listVoices();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xDDEFDFCF), width: 2),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.quiz.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _unlocked ? Icons.graphic_eq_rounded : Icons.lock_rounded,
+                  color: AppColors.quiz,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Voice & speed',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _unlocked
+                          ? 'Pick the reading voice and how fast it speaks.'
+                          : 'Grown-ups only. Unlock to choose who reads to '
+                              'your child.',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.inkMuted),
+                    ),
+                  ],
+                ),
+              ),
+              if (!_unlocked)
+                TextButton(onPressed: _unlock, child: const Text('Unlock')),
+            ],
+          ),
+          if (_unlocked) ...<Widget>[
+            const SizedBox(height: 14),
+            BlocBuilder<SettingsCubit, SettingsState>(
+              builder: (BuildContext context, SettingsState state) {
+                final SettingsCubit cubit = context.read<SettingsCubit>();
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Speaking speed',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Slider(
+                      value: state.speechRate
+                          .clamp(
+                            AppSettings.minSpeechRate,
+                            AppSettings.maxSpeechRate,
+                          )
+                          .toDouble(),
+                      min: AppSettings.minSpeechRate,
+                      max: AppSettings.maxSpeechRate,
+                      divisions: 10,
+                      label: '${(state.speechRate * 100).round()}%',
+                      activeColor: AppColors.quiz,
+                      onChanged: cubit.setSpeechRate,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Reading voice',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.ink,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _VoiceDropdown(
+                      voices: _voices,
+                      selected: state.voiceName,
+                      onChanged: cubit.setVoiceName,
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () => di.sl<AudioService>().testVoice(),
+                icon: const Icon(Icons.play_arrow_rounded, size: 22),
+                label: const Text('Test voice'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// The device voice picker. "Automatic" (null) lets the app choose the best
+/// English voice; every other entry is a voice the engine actually reported.
+class _VoiceDropdown extends StatelessWidget {
+  const _VoiceDropdown({
+    required this.voices,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final Future<List<String>>? voices;
+  final String? selected;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: voices,
+      builder: (BuildContext context, AsyncSnapshot<List<String>> snapshot) {
+        final List<String> names = snapshot.data ?? const <String>[];
+        final bool loading =
+            snapshot.connectionState == ConnectionState.waiting;
+        final String? current =
+            selected != null && names.contains(selected) ? selected : null;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.outlineSoft, width: 1.5),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: current,
+              isExpanded: true,
+              hint: Text(loading ? 'Looking for voices…' : 'Automatic'),
+              items: <DropdownMenuItem<String?>>[
+                const DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text('Automatic (best for this device)'),
+                ),
+                for (final String name in names)
+                  DropdownMenuItem<String?>(
+                    value: name,
+                    child: Text(name, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: loading ? null : onChanged,
+            ),
+          ),
+        );
+      },
     );
   }
 }

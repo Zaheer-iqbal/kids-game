@@ -12,7 +12,18 @@ class AppSettings extends Equatable {
     this.soundEnabled = true,
     this.voiceEnabled = true,
     this.reduceMotion = false,
+    this.speechRate = defaultSpeechRate,
+    this.voiceName,
+    this.themeColorIndex = 0,
   });
+
+  /// Speaking speed used by the device voice when narrating. Deliberately
+  /// slower than the platform default so young listeners keep up.
+  static const double defaultSpeechRate = 0.45;
+
+  /// Lowest and highest speaking speeds the parent slider offers.
+  static const double minSpeechRate = 0.25;
+  static const double maxSpeechRate = 0.75;
 
   /// Everything on: the default a fresh install starts with.
   static const AppSettings defaults = AppSettings();
@@ -36,6 +47,17 @@ class AppSettings extends Equatable {
   /// Off by default; the system reduced-motion flag is honoured regardless.
   final bool reduceMotion;
 
+  /// Speaking speed for narration, in the engine's 0.0–1.0 range.
+  final double speechRate;
+
+  /// The voice the parent picked from the device list, or `null` to let the
+  /// app choose the best English voice automatically.
+  final String? voiceName;
+
+  /// Global background theme index (0 = Sunny Garden, 1 = Starry Sky,
+  /// 2 = Candy Land, 3 = Cozy Nest, 4 = Ocean Breeze, 5 = Lavender Dream).
+  final int themeColorIndex;
+
   AppSettings copyWith({
     bool? animationsEnabled,
     bool? sparklesEnabled,
@@ -43,6 +65,10 @@ class AppSettings extends Equatable {
     bool? soundEnabled,
     bool? voiceEnabled,
     bool? reduceMotion,
+    double? speechRate,
+    String? voiceName,
+    bool clearVoiceName = false,
+    int? themeColorIndex,
   }) {
     return AppSettings(
       animationsEnabled: animationsEnabled ?? this.animationsEnabled,
@@ -51,6 +77,9 @@ class AppSettings extends Equatable {
       soundEnabled: soundEnabled ?? this.soundEnabled,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
       reduceMotion: reduceMotion ?? this.reduceMotion,
+      speechRate: speechRate ?? this.speechRate,
+      voiceName: clearVoiceName ? null : (voiceName ?? this.voiceName),
+      themeColorIndex: themeColorIndex ?? this.themeColorIndex,
     );
   }
 
@@ -62,5 +91,8 @@ class AppSettings extends Equatable {
         soundEnabled,
         voiceEnabled,
         reduceMotion,
+        speechRate,
+        voiceName,
+        themeColorIndex,
       ];
 }

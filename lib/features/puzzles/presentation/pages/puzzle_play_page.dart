@@ -133,6 +133,9 @@ class _PuzzleViewState extends State<_PuzzleView> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               const SizedBox(height: AppTokens.space2),
+              if (state.puzzle != null)
+                _DifficultyChip(puzzle: state.puzzle!),
+              const SizedBox(height: AppTokens.space3),
               Text(
                 _instruction(state.puzzle),
                 textAlign: TextAlign.center,
@@ -226,6 +229,43 @@ class _PuzzleViewState extends State<_PuzzleView> {
       case AnimalPuzzleType.shadowMatch:
         return 'Which shadow matches?';
     }
+  }
+}
+
+class _DifficultyChip extends StatelessWidget {
+  const _DifficultyChip({required this.puzzle});
+
+  final AnimalPuzzle puzzle;
+
+  @override
+  Widget build(BuildContext context) {
+    final PuzzleDifficulty difficulty = puzzle.difficulty;
+    final Color accent;
+    switch (difficulty) {
+      case PuzzleDifficulty.easy:
+        accent = AppColors.accentMint;
+      case PuzzleDifficulty.medium:
+        accent = AppColors.goldInk;
+      case PuzzleDifficulty.hard:
+        accent = AppColors.accentCoral;
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+        border: Border.all(color: accent.withValues(alpha: 0.35), width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.space4,
+          vertical: AppTokens.space1 + 2,
+        ),
+        child: Text(
+          '${difficulty.label}  •  ${puzzle.pieceCount} pieces',
+          style: AppTheme.glyphStyle(15, color: accent),
+        ),
+      ),
+    );
   }
 }
 

@@ -15,7 +15,8 @@ class _RecordingAudioService extends AudioService {
   final List<String> spoken = <String>[];
 
   @override
-  Future<void> speakText(String text) async => spoken.add(text);
+  Future<void> speakText(String text, {String? clipKey}) async =>
+      spoken.add(text);
 }
 
 Future<({MascotCubit mascot, _RecordingAudioService audio, SettingsCubit settings})>

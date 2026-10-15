@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/mascot/mascot_mood.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/services/fun_facts.dart';
 import '../../../../core/services/progress_service.dart';
@@ -29,6 +30,7 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
     on<OptionSelected>(_onOptionSelected);
     on<NextQuestion>(_onNextQuestion);
     on<ReplaySound>(_onReplaySound);
+    on<QuizHintRequested>(_onHintRequested);
   }
 
   final QuizRepository _repository;
@@ -167,6 +169,34 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
     }
   }
 
+  Future<void> _onHintRequested(
+    QuizHintRequested event,
+    Emitter<QuizState> emit,
+  ) async {
+    final QuizState current = state;
+    if (!current.canHint || current.targetKey == null) return;
+
+    // A hint always removes one *wrong* option the child has not lost yet.
+    final List<String> candidates = current.options
+        .map((QuizOption option) => option.key)
+        .where((String key) =>
+            key != current.targetKey && !current.hiddenKeys.contains(key))
+        .toList();
+    if (candidates.isEmpty) return;
+
+    final String hidden = candidates[_random.nextInt(candidates.length)];
+    final String line = MascotMood.encouraging.lines[
+        _random.nextInt(MascotMood.encouraging.lines.length)];
+
+    emit(current.copyWith(
+      hintsUsed: current.hintsUsed + 1,
+      hiddenKeys: <String>[...current.hiddenKeys, hidden],
+      hintMessage: line,
+      hintToken: current.hintToken + 1,
+    ));
+    unawaited(_audioService.speakText(line));
+  }
+
   Future<void> _askNextQuestion(Emitter<QuizState> emit) async {
     final _Round round = _buildRound();
     _lastLetter = round.letterTarget;
@@ -179,6 +209,9 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
       targetKey: round.question.targetKey,
       revealCorrect: false,
       wrongOption: null,
+      hintsUsed: 0,
+      hiddenKeys: const <String>[],
+      hintMessage: null,
     ));
 
     switch (_type) {

@@ -19,6 +19,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
   static const String soundKey = 'settings_sound_enabled';
   static const String voiceKey = 'settings_voice_enabled';
   static const String reduceMotionKey = 'settings_reduce_motion';
+  static const String speechRateKey = 'settings_speech_rate';
+  static const String voiceNameKey = 'settings_voice_name';
+  static const String themeColorKey = 'settings_theme_color_index';
 
   @override
   AppSettings load() {
@@ -29,6 +32,9 @@ class SettingsRepositoryImpl implements SettingsRepository {
       soundEnabled: _prefs.getBool(soundKey) ?? true,
       voiceEnabled: _prefs.getBool(voiceKey) ?? true,
       reduceMotion: _prefs.getBool(reduceMotionKey) ?? false,
+      speechRate: _prefs.getDouble(speechRateKey) ?? AppSettings.defaultSpeechRate,
+      voiceName: _prefs.getString(voiceNameKey),
+      themeColorIndex: _prefs.getInt(themeColorKey) ?? 0,
     );
   }
 
@@ -40,5 +46,6 @@ class SettingsRepositoryImpl implements SettingsRepository {
     await _prefs.setBool(soundKey, settings.soundEnabled);
     await _prefs.setBool(voiceKey, settings.voiceEnabled);
     await _prefs.setBool(reduceMotionKey, settings.reduceMotion);
-  }
-}
+    await _prefs.setDouble(speechRateKey, settings.speechRate);
+    await _prefs.setInt(themeColorKey, settings.themeColorIndex);
+    fina

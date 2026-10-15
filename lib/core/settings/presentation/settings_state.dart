@@ -11,6 +11,8 @@ class SettingsState extends Equatable {
     this.soundEnabled = true,
     this.voiceEnabled = true,
     this.reduceMotion = false,
+    this.speechRate = AppSettings.defaultSpeechRate,
+    this.voiceName,
     this.isLoaded = false,
   });
 
@@ -26,6 +28,8 @@ class SettingsState extends Equatable {
       soundEnabled: settings.soundEnabled,
       voiceEnabled: settings.voiceEnabled,
       reduceMotion: settings.reduceMotion,
+      speechRate: settings.speechRate,
+      voiceName: settings.voiceName,
       isLoaded: isLoaded,
     );
   }
@@ -43,6 +47,12 @@ class SettingsState extends Equatable {
   /// Parent "Reduce motion" switch: keep only simple fades.
   final bool reduceMotion;
 
+  /// Speaking speed for narration, in the engine's 0.0–1.0 range.
+  final double speechRate;
+
+  /// The voice the parent picked, or `null` to auto-select the best English.
+  final String? voiceName;
+
   /// True once the stored values have been read at least once.
   final bool isLoaded;
 
@@ -53,6 +63,8 @@ class SettingsState extends Equatable {
         soundEnabled: soundEnabled,
         voiceEnabled: voiceEnabled,
         reduceMotion: reduceMotion,
+        speechRate: speechRate,
+        voiceName: voiceName,
       );
 
   SettingsState copyWith({
@@ -62,6 +74,9 @@ class SettingsState extends Equatable {
     bool? soundEnabled,
     bool? voiceEnabled,
     bool? reduceMotion,
+    double? speechRate,
+    String? voiceName,
+    bool clearVoiceName = false,
     bool? isLoaded,
   }) {
     return SettingsState(
@@ -71,6 +86,8 @@ class SettingsState extends Equatable {
       soundEnabled: soundEnabled ?? this.soundEnabled,
       voiceEnabled: voiceEnabled ?? this.voiceEnabled,
       reduceMotion: reduceMotion ?? this.reduceMotion,
+      speechRate: speechRate ?? this.speechRate,
+      voiceName: clearVoiceName ? null : (voiceName ?? this.voiceName),
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -83,6 +100,8 @@ class SettingsState extends Equatable {
         soundEnabled,
         voiceEnabled,
         reduceMotion,
+        speechRate,
+        voiceName,
         isLoaded,
       ];
 }

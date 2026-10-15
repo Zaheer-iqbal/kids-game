@@ -6,7 +6,7 @@ import '../../../../core/widgets/tap_delight.dart';
 import '../../domain/entities/letter_item.dart';
 
 /// Big, colorful, rounded tap target for one letter in the grid: the letter up
-/// front, its emoji picture and the word underneath.
+/// front, its animal emoji and the word underneath.
 ///
 /// [TapDelight] adds the pop, the little random tilt and the occasional
 /// sparkle burst around it.
@@ -34,55 +34,73 @@ class LetterCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <Color>[color, Color.lerp(color, Colors.white, 0.15)!],
+            colors: <Color>[
+              color,
+              Color.lerp(color, Colors.white, 0.18)!,
+            ],
           ),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: explored ? AppColors.gold : Colors.white.withValues(alpha: 0.75),
-            width: explored ? 4 : 2,
+            color: explored
+                ? AppColors.gold
+                : Colors.white.withValues(alpha: 0.75),
+            width: explored ? 3.5 : 2,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              color: color.withValues(alpha: 0.38),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
-            Center(
+            // ── large letter, slightly above center ───────────────────
+            Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
               child: Text(
                 letter.letter,
-                style: theme.textTheme.displayMedium?.copyWith(
+                textAlign: TextAlign.center,
+                style: theme.textTheme.displaySmall?.copyWith(
                   color: Colors.white,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
                   shadows: <Shadow>[
                     Shadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withValues(alpha: 0.22),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
               ),
             ),
-            Positioned(
-              right: 6,
-              bottom: 22,
-              child: IgnorePointer(
-                child: EmojiPicture(
-                  emoji: letter.emoji,
-                  fontSize: 26,
-                  tint: false,
-                ),
-              ),
-            ),
+
+            // ── big animal emoji, centered below the letter ───────────
             Positioned(
               left: 4,
               right: 4,
-              bottom: 9,
+              bottom: 26,
+              child: Center(
+                child: IgnorePointer(
+                  child: EmojiPicture(
+                    emoji: letter.emoji,
+                    fontSize: 32,
+                    tint: false,
+                  ),
+                ),
+              ),
+            ),
+
+            // ── word label at very bottom ─────────────────────────────
+            Positioned(
+              left: 4,
+              right: 4,
+              bottom: 7,
               child: Text(
                 letter.word,
                 maxLines: 1,
@@ -91,15 +109,18 @@ class LetterCard extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: Colors.white.withValues(alpha: 0.92),
                   fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
                 ),
               ),
             ),
+
+            // ── star badge for explored letters ───────────────────────
             if (explored)
               Positioned(
-                top: 7,
-                right: 7,
+                top: 6,
+                right: 6,
                 child: Container(
-                  padding: const EdgeInsets.all(2),
+                  padding: const EdgeInsets.all(2.5),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
@@ -114,7 +135,7 @@ class LetterCard extends StatelessWidget {
                   child: const Icon(
                     Icons.star_rounded,
                     color: AppColors.gold,
-                    size: 22,
+                    size: 20,
                   ),
                 ),
               ),

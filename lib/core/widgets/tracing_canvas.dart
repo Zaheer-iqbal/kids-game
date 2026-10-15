@@ -52,6 +52,11 @@ class TracingCanvasState extends State<TracingCanvas> {
   int _lastMilestone = 0;
   Size _canvasSize = Size.zero;
 
+  // Last two stroke samples, used to draw the ink as smooth quadratic curves
+  // instead of a jagged polyline.
+  Offset? _prevPoint;
+  Offset? _lastMid;
+
   /// The live trace, or null while the glyph is still rasterizing.
   ///
   /// Exposed so tests can drag along the real target points instead of
@@ -111,13 +116,32 @@ class TracingCanvasState extends State<TracingCanvas> {
   /// Raw pointer events (not a gesture recognizer) so strokes are never stolen
   /// by the parent sheet's vertical scroll view.
   void _startStroke(Offset point) {
+    _ink.reset();
     _ink.moveTo(point.dx, point.dy);
+    _prevPoint = point;
+    _lastMid = null;
     _inkVersion++;
     setState(() {});
   }
 
   void _extendStroke(Offset point) {
-    _ink.lineTo(point.dx, point.dy);
+    // Draw through the midpoint of each pair of samples so the line reads as a
+    // smooth finger stroke rather than a chain of straight segments.
+    final Offset? prev = _prevPoint;
+    if (prev != null) {
+      final Offset mid = Offset(
+        (prev.dx + point.dx) / 2,
+        (prev.dy + point.dy) / 2,
+      );
+      final Offset? lastMid = _lastMid;
+      if (lastMid == null) {
+        _ink.lineTo(mid.dx, mid.dy);
+      } else {
+        _ink.quadraticBezierTo(prev.dx, prev.dy, mid.dx, mid.dy);
+      }
+      _lastMid = mid;
+      _prevPoint = point;
+    }
     _inkVersion++;
     final TraceModel? model = _model;
     if (model == null || model.isComplete) {
@@ -136,6 +160,19 @@ class TracingCanvasState extends State<TracingCanvas> {
     if (model.isComplete) {
       _complete();
     }
+    setState(() {});
+  }
+
+  void _endStroke() {
+    // Finish the stroke at the last sample so the visible ink ends under the
+    // finger instead of one midpoint short.
+    final Offset? prev = _prevPoint;
+    if (prev != null) {
+      _ink.lineTo(prev.dx, prev.dy);
+      _inkVersion++;
+    }
+    _prevPoint = null;
+    _lastMid = null;
     setState(() {});
   }
 
@@ -172,6 +209,8 @@ class TracingCanvasState extends State<TracingCanvas> {
               _startStroke(event.localPosition),
           onPointerMove: (PointerMoveEvent event) =>
               _extendStroke(event.localPosition),
+          onPointerUp: (PointerUpEvent event) => _endStroke(),
+          onPointerCancel: (PointerCancelEvent event) => _endStroke(),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Stack(
@@ -225,7 +264,11 @@ class TracingCanvasState extends State<TracingCanvas> {
                     ),
                   ),
                   if (model.isComplete)
-                    const IgnorePointer(child: Center(child: _CompletionBadge()))
+                    const Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: IgnorePointer(child: _CompletionBadge()),
+                    )
                   else if (model.isNearlyThere)
                     const Positioned(
                       left: 12,
@@ -299,7 +342,7 @@ class _TracePainter extends CustomPainter {
           ? accent
           : AppColors.ink.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
+      ..strokeWidth = 10
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     canvas.drawPath(ink, inkPaint);
@@ -435,20 +478,20 @@ class _CompletionBadge extends StatelessWidget {
       builder: (BuildContext context, double value, Widget? child) =>
           Transform.scale(scale: value, child: child),
       child: Container(
-        width: 66,
-        height: 66,
+        width: 52,
+        height: 52,
         decoration: BoxDecoration(
           color: AppColors.success,
           shape: BoxShape.circle,
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: AppColors.success.withValues(alpha: 0.4),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+              blurRadius: 16,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
-        child: const Icon(Icons.check_rounded, color: Colors.white, size: 40),
+        child: const Icon(Icons.check_rounded, color: Colors.white, size: 32),
       ),
     );
   }

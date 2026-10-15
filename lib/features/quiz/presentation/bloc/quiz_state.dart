@@ -24,6 +24,10 @@ class QuizState extends Equatable {
     this.newHighScore = false,
     this.result,
     this.error,
+    this.hintsUsed = 0,
+    this.hiddenKeys = const <String>[],
+    this.hintMessage,
+    this.hintToken = 0,
   });
 
   final QuizStatus status;
@@ -62,6 +66,32 @@ class QuizState extends Equatable {
 
   final String? error;
 
+  /// How many hints have been spent on the current question.
+  final int hintsUsed;
+
+  /// Keys of wrong options a hint has already removed from view for the
+  /// current question. The options themselves stay in [options] so the layout
+  /// and tests are unaffected — the cards just fade these out.
+  final List<String> hiddenKeys;
+
+  /// The line the owl last said when a hint was spent (drives its bubble).
+  final String? hintMessage;
+
+  /// Bumped on every hint so the owl replays its talking animation.
+  final int hintToken;
+
+  /// True when the child can still take a hint on this question: at most two
+  /// per question, and never on an easy two-choice round.
+  bool get canHint =>
+      status == QuizStatus.ready &&
+      !revealCorrect &&
+      options.length > 2 &&
+      hintsUsed < maxHintsPerQuestion &&
+      hiddenKeys.length < options.length - 1;
+
+  /// Hints allowed per question.
+  static const int maxHintsPerQuestion = 2;
+
   /// Sentinel so nullable fields can be explicitly cleared to null.
   /// Without it, `wrongOption ?? this.wrongOption` would keep the old value
   /// and a correct answer could never dismiss the retry state.
@@ -84,6 +114,10 @@ class QuizState extends Equatable {
     bool? newHighScore,
     Object? result = _unset,
     Object? error = _unset,
+    int? hintsUsed,
+    List<String>? hiddenKeys,
+    Object? hintMessage = _unset,
+    int? hintToken,
   }) {
     return QuizState(
       status: status ?? this.status,
@@ -105,6 +139,11 @@ class QuizState extends Equatable {
       newHighScore: newHighScore ?? this.newHighScore,
       result: identical(result, _unset) ? this.result : result as QuizResult?,
       error: identical(error, _unset) ? this.error : error as String?,
+      hintsUsed: hintsUsed ?? this.hintsUsed,
+      hiddenKeys: hiddenKeys ?? this.hiddenKeys,
+      hintMessage:
+          identical(hintMessage, _unset) ? this.hintMessage : hintMessage as String?,
+      hintToken: hintToken ?? this.hintToken,
     );
   }
 
@@ -126,5 +165,9 @@ class QuizState extends Equatable {
         newHighScore,
         result,
         error,
+        hintsUsed,
+        hiddenKeys,
+        hintMessage,
+        hintToken,
       ];
 }

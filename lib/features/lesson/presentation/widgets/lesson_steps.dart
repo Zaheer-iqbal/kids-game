@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/emoji_picture.dart';
-import '../../../../core/widgets/entrance.dart';
 import '../../../../core/widgets/pressable_scale.dart';
 import '../../../../core/widgets/tracing_canvas.dart';
 import '../../../numbers/presentation/widgets/count_objects.dart';
@@ -135,17 +135,22 @@ class MeetStepView extends StatelessWidget {
               AppTokens.space4,
               AppTokens.space4,
             ),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: AppTokens.space3,
-              runSpacing: AppTokens.space3,
-              children: <Widget>[
-                for (int i = 0; i < step.glyphs.length; i++)
-                  StaggerEntrance(
-                    index: i,
-                    child: _GlyphTile(glyph: step.glyphs[i], audio: audio),
-                  ),
-              ],
+            // The whole tray of glyphs fades up together on one shared
+            // controller, cascading left to right.
+            child: MotionStagger(
+              itemCount: step.glyphs.length,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: AppTokens.space3,
+                runSpacing: AppTokens.space3,
+                children: <Widget>[
+                  for (int i = 0; i < step.glyphs.length; i++)
+                    AppMotion(
+                      index: i,
+                      child: _GlyphTile(glyph: step.glyphs[i], audio: audio),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -336,30 +341,29 @@ class ChallengeStepView extends StatelessWidget {
                     crossAxisSpacing: AppTokens.space3,
                     childAspectRatio: 1,
                     children: <Widget>[
+                      // QuizOptionCard staggers itself in via [entrancePhase],
+                      // so it needs no extra wrapper here.
                       for (int i = 0; i < options.length; i++)
-                        StaggerEntrance(
-                          index: i,
-                          child: QuizOptionCard(
-                            key: ValueKey<String>(
-                              'lesson-option-${options[i].key}',
-                            ),
-                            entrancePhase: i / options.length,
-                            option: QuizOption(
-                              key: options[i].key,
-                              displayText: options[i].key,
-                              hintText: options[i].word,
-                              emoji: options[i].emoji,
-                              colorValue: options[i].colorValue,
-                              style: style,
-                            ),
-                            isDimmed: state.answered &&
-                                options[i].key != target.key,
-                            isWrong: state.wrongKey == options[i].key,
-                            wrongToken: state.wrongToken,
-                            isCorrect: options[i].key == target.key,
-                            showCorrect: state.answered,
-                            onTap: () => onOption(options[i].key),
+                        QuizOptionCard(
+                          key: ValueKey<String>(
+                            'lesson-option-${options[i].key}',
                           ),
+                          entrancePhase: i / options.length,
+                          option: QuizOption(
+                            key: options[i].key,
+                            displayText: options[i].key,
+                            hintText: options[i].word,
+                            emoji: options[i].emoji,
+                            colorValue: options[i].colorValue,
+                            style: style,
+                          ),
+                          isDimmed:
+                              state.answered && options[i].key != target.key,
+                          isWrong: state.wrongKey == options[i].key,
+                          wrongToken: state.wrongToken,
+                          isCorrect: options[i].key == target.key,
+                          showCorrect: state.answered,
+                          onTap: () => onOption(options[i].key),
                         ),
                     ],
                   ),

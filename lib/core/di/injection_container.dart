@@ -95,6 +95,8 @@ Future<void> configureDependencies() async {
     audio.configure(
       soundEnabled: state.soundEnabled,
       voiceEnabled: state.voiceEnabled,
+      speechRate: state.speechRate,
+      voiceName: state.voiceName,
     );
   }
 

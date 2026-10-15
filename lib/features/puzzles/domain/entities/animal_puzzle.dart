@@ -12,6 +12,32 @@ enum AnimalPuzzleType {
   shadowMatch,
 }
 
+/// How demanding a puzzle is, derived straight from its piece count so the
+/// ladder is always consistent with the board the child actually sees.
+enum PuzzleDifficulty {
+  /// 4 pieces (2x2) - a first taste.
+  easy,
+
+  /// 6 pieces (2x3) or 9 pieces (3x3).
+  medium,
+
+  /// 12 pieces (3x4) - a proper challenge.
+  hard,
+}
+
+extension PuzzleDifficultyLabel on PuzzleDifficulty {
+  String get label {
+    switch (this) {
+      case PuzzleDifficulty.easy:
+        return 'Easy';
+      case PuzzleDifficulty.medium:
+        return 'Medium';
+      case PuzzleDifficulty.hard:
+        return 'Hard';
+    }
+  }
+}
+
 /// A single animal puzzle with its rule set baked in.
 ///
 /// The mapping from level index to type and grid size is deterministic, so the
@@ -42,6 +68,13 @@ class AnimalPuzzle {
   bool get isJigsaw => type == AnimalPuzzleType.jigsaw;
   bool get isSliding => type == AnimalPuzzleType.sliding;
   bool get isShadowMatch => type == AnimalPuzzleType.shadowMatch;
+
+  /// Difficulty tier implied by the piece count: 4 / (6 or 9) / 12.
+  PuzzleDifficulty get difficulty {
+    if (pieceCount <= 4) return PuzzleDifficulty.easy;
+    if (pieceCount <= 9) return PuzzleDifficulty.medium;
+    return PuzzleDifficulty.hard;
+  }
 
   /// Sliding puzzles hide one tile, so they need a gap.
   int get slidingGapIndex => pieceCount - 1;

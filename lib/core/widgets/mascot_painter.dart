@@ -6,43 +6,48 @@ import '../mascot/mascot_mood.dart';
 import '../theme/app_colors.dart';
 import 'sparkle_paint.dart';
 
-/// Colours for the hand-drawn owl. Two looks for the same character so the big
-/// celebration owl can differ slightly from the corner one.
+/// Colours for the hand-drawn owl. One character, one palette: every owl in
+/// the app (corners, celebrations, quiz, tracing) uses this single look so the
+/// child always sees the same friendly yellow friend.
 @immutable
 class MascotPalette {
   const MascotPalette({
     required this.bodyTop,
     required this.bodyBottom,
     required this.belly,
+    required this.tuft,
+    required this.wing,
     required this.beak,
+    required this.feet,
     required this.ink,
     required this.blush,
   });
 
-  /// The default violet owl that sits in the corner of the learning screens.
+  /// The one and only owl: a warm yellow bird with an amber crown, coral beak
+  /// and soft peach cheeks.
   static const MascotPalette owl = MascotPalette(
-    bodyTop: Color(0xFFB3A6F7),
-    bodyBottom: Color(0xFF7C6BE0),
-    belly: Color(0xFFF5F1FF),
-    beak: AppColors.gold,
+    bodyTop: Color(0xFFFFC93C),
+    bodyBottom: Color(0xFFF2A91E),
+    belly: Color(0xFFFFE9A8),
+    tuft: Color(0xFFF2A91E),
+    wing: Color(0xFFF2A91E),
+    beak: Color(0xFFFF7A66),
+    feet: Color(0xFFFF9F43),
     ink: Color(0xFF3C3350),
-    blush: Color(0xFFFF9AA2),
+    blush: Color(0xFFFF9F8A),
   );
 
-  /// Warm amber variant, used for big celebration moments.
-  static const MascotPalette sunny = MascotPalette(
-    bodyTop: Color(0xFFFFC978),
-    bodyBottom: Color(0xFFF2913F),
-    belly: Color(0xFFFFF6E6),
-    beak: Color(0xFFFF7E5F),
-    ink: Color(0xFF4A3520),
-    blush: Color(0xFFFF8A8A),
-  );
+  /// Kept as an alias of [owl] so the big celebration owl is the *same* owl,
+  /// never a second look.
+  static const MascotPalette sunny = owl;
 
   final Color bodyTop;
   final Color bodyBottom;
   final Color belly;
+  final Color tuft;
+  final Color wing;
   final Color beak;
+  final Color feet;
   final Color ink;
   final Color blush;
 
@@ -52,13 +57,25 @@ class MascotPalette {
       other.bodyTop == bodyTop &&
       other.bodyBottom == bodyBottom &&
       other.belly == belly &&
+      other.tuft == tuft &&
+      other.wing == wing &&
       other.beak == beak &&
+      other.feet == feet &&
       other.ink == ink &&
       other.blush == blush;
 
   @override
-  int get hashCode =>
-      Object.hash(bodyTop, bodyBottom, belly, beak, ink, blush);
+  int get hashCode => Object.hash(
+        bodyTop,
+        bodyBottom,
+        belly,
+        tuft,
+        wing,
+        beak,
+        feet,
+        ink,
+        blush,
+      );
 }
 
 /// "Pip", a round kid-friendly owl drawn completely in code.
@@ -73,6 +90,7 @@ class MascotPainter extends CustomPainter {
     required this.mood,
     required this.reacting,
     required this.giggling,
+    this.talking = false,
     this.palette = MascotPalette.owl,
   }) : super(repaint: animation);
 
@@ -87,6 +105,10 @@ class MascotPainter extends CustomPainter {
 
   /// True while the tap-triggered giggle is playing.
   final bool giggling;
+
+  /// True while the owl is "speaking": the beak flaps and the wings flutter,
+  /// driven by the same repeating clock as the breathing loop.
+  final bool talking;
 
   final MascotPalette palette;
 
@@ -139,6 +161,7 @@ class MascotPainter extends CustomPainter {
     double eyeScale = 1;
     double mouthOpen = 0;
     double blush = 0;
+    double wingFlap = 0;
     int brows = 0;
 
     switch (mood) {
@@ -172,6 +195,14 @@ class MascotPainter extends CustomPainter {
       eyeScale = math.max(eyeScale, 0.94);
     }
 
+    if (talking) {
+      // Speaking: the beak flaps and the wings flutter, both several times per
+      // breathing cycle so it reads clearly as "the owl is talking".
+      final double talk = math.sin(2 * math.pi * t * 6);
+      mouthOpen = 0.28 + 0.55 * (0.5 + 0.5 * talk);
+      wingFlap = 0.24 * talk;
+    }
+
     return _Pose(
       breath: breath,
       lift: lift,
@@ -180,6 +211,7 @@ class MascotPainter extends CustomPainter {
       eyeOpen: 1 - 0.88 * _blinkAmount(t),
       mouthOpen: mouthOpen,
       blush: blush,
+      wingFlap: wingFlap,
       brows: brows,
     );
   }
@@ -207,12 +239,12 @@ class MascotPainter extends CustomPainter {
       );
 
     // Ear tufts, drawn first so they peek out from behind the head.
-    final Paint tuftPaint = Paint()..color = palette.bodyBottom;
+    final Paint tuftPaint = Paint()..color = palette.tuft;
     canvas.drawPath(_leftTuft(), tuftPaint);
     canvas.drawPath(_rightTuft(), tuftPaint);
 
     // Feet, also behind the body.
-    final Paint footPaint = Paint()..color = palette.beak;
+    final Paint footPaint = Paint()..color = palette.feet;
     for (final double x in const <double>[38, 62]) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -235,10 +267,10 @@ class MascotPainter extends CustomPainter {
 
     // Wings resting on the sides.
     final Paint wingPaint = Paint()
-      ..color = Color.lerp(palette.bodyBottom, palette.ink, 0.12)!;
+      ..color = Color.lerp(palette.wing, palette.ink, 0.12)!;
     canvas.save();
     canvas.translate(14, 64);
-    canvas.rotate(0.18);
+    canvas.rotate(0.18 + pose.wingFlap);
     canvas.drawOval(
       Rect.fromCenter(center: Offset.zero, width: 17, height: 30),
       wingPaint,
@@ -246,7 +278,7 @@ class MascotPainter extends CustomPainter {
     canvas.restore();
     canvas.save();
     canvas.translate(86, 64);
-    canvas.rotate(-0.18);
+    canvas.rotate(-0.18 - pose.wingFlap);
     canvas.drawOval(
       Rect.fromCenter(center: Offset.zero, width: 17, height: 30),
       wingPaint,
@@ -408,6 +440,7 @@ class MascotPainter extends CustomPainter {
     return oldDelegate.mood != mood ||
         oldDelegate.reacting != reacting ||
         oldDelegate.giggling != giggling ||
+        oldDelegate.talking != talking ||
         oldDelegate.palette != palette;
   }
 }
@@ -422,6 +455,7 @@ class _Pose {
     required this.mouthOpen,
     required this.blush,
     required this.brows,
+    this.wingFlap = 0,
   });
 
   final double breath;
@@ -431,6 +465,9 @@ class _Pose {
   final double eyeOpen;
   final double mouthOpen;
   final double blush;
+
+  /// Extra rotation applied to the wings while the owl is talking.
+  final double wingFlap;
 
   /// 0 = none, 1 = excited (raised), 2 = encouraging (soft tilt).
   final int brows;

@@ -120,7 +120,7 @@ class SlidingBoard extends StatelessWidget {
                 columns: puzzle.columns,
                 rows: puzzle.rows,
                 tile: tileId,
-                background: AnimalImages.pastels[tileId % AnimalImages.pastels.length],
+                showBackground: false,
               ),
             ),
           ),

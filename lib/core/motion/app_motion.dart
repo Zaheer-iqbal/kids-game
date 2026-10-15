@@ -238,7 +238,12 @@ class _MotionStaggerState extends State<MotionStagger>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _reduce = _motionReduced(context);
-    if (_started) return;
+    if (_started) {
+      // A settings flip mid-entrance: halt the shared ticker. The children
+      // already render their reduced fallback, so this only saves frames.
+      if (_reduce) _controller.stop();
+      return;
+    }
     _started = true;
     if (_reduce) {
       _controller.value = 1;
@@ -377,8 +382,10 @@ class _AppMotionState extends State<AppMotion>
     }
     _started = true;
     if (_reduce) {
-      // Looping styles sit at rest; one-shots jump straight to their settled
-      // frame. Matches [_syncPlayback] so a settings flip is never lopsided.
+      // Pin the controller: one-shots sit on their settled frame, looping
+      // styles at rest. Safe here because this widget's builder has not mounted
+      // yet, so nothing is listening. Subsequent flips go through
+      // [_syncPlayback], which defers for exactly this reason.
       _controllerFor(group)?.value = widget.style.repeats ? 0 : 1;
     } else if (widget.autoStart) {
       _play(group);
@@ -405,12 +412,27 @@ class _AppMotionState extends State<AppMotion>
   void _syncPlayback(_MotionGroupScope? group) {
     final AnimationController? c = _controllerFor(group);
     if (c == null) return;
-    if (_reduce) {
-      c.stop();
-      c.value = widget.style.repeats ? 0 : 1;
-    } else if (!_reduce && widget.autoStart && !c.isAnimating && c.value == 0) {
-      _play(group);
-    }
+    final bool reduced = _reduce;
+    final bool autoStart = widget.autoStart;
+    final bool repeats = widget.style.repeats;
+    // This runs from [didChangeDependencies], i.e. during the build phase.
+    // Mutating the controller here would notify an already-mounted
+    // AnimatedBuilder mid-build ("markNeedsBuild called during build"), so we
+    // defer the change by one frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (reduced) {
+        c.stop();
+        c.value = repeats ? 0 : 1;
+      } else if (autoStart && !c.isAnimating) {
+        // Restart cleanly so a toggle back on replays from the top.
+        if (repeats) {
+          c.repeat();
+        } else {
+          c.forward(from: 0);
+        }
+      }
+    });
   }
 
   @override

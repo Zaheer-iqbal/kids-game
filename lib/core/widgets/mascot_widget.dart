@@ -47,6 +47,7 @@ class MascotWidget extends StatefulWidget {
     this.message,
     this.reactionToken = 0,
     this.giggleToken = 0,
+    this.talking = false,
     this.palette = MascotPalette.owl,
     this.bubbleLayout = MascotBubbleLayout.above,
     this.bubbleMaxWidth = 230,
@@ -68,6 +69,10 @@ class MascotWidget extends StatefulWidget {
 
   /// Changing this value plays a giggle wiggle without changing the mood.
   final int giggleToken;
+
+  /// When true the owl flaps its beak and wings as if speaking. Purely visual:
+  /// the caller decides when the sound starts and stops.
+  final bool talking;
 
   final MascotPalette palette;
   final MascotBubbleLayout bubbleLayout;
@@ -282,6 +287,7 @@ class _MascotWidgetState extends State<MascotWidget>
                 mood: widget.mood,
                 reacting: _reacting,
                 giggling: _giggling,
+                talking: widget.talking,
                 palette: widget.palette,
               ),
               child: const SizedBox.expand(),

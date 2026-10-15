@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -10,8 +12,13 @@ import '../bloc/puzzle_event.dart';
 import '../bloc/puzzle_state.dart';
 import 'animal_picture.dart';
 
-/// The jigsaw board: a grid of animal-shaped shadows the child fills by
-/// dragging (or tapping) colourful picture pieces from the tray below.
+/// The jigsaw board: a **square** picture the child rebuilds by dragging (or
+/// tapping) pieces from the tray into their matching slots.
+///
+/// The board is square and split into the same [columns] x [rows] grid as the
+/// composed picture, so every cell has exactly the same aspect ratio as its
+/// slice. Pieces are drawn edge to edge (no gaps, no per-tile tint), which is
+/// what lets the finished board read as one single picture.
 class JigsawBoard extends StatefulWidget {
   const JigsawBoard({super.key, required this.state});
 
@@ -33,7 +40,7 @@ class _JigsawBoardState extends State<JigsawBoard> {
     return Column(
       children: <Widget>[
         Expanded(child: _buildBoard(context, puzzle, animal)),
-        const SizedBox(height: AppTokens.space5),
+        const SizedBox(height: AppTokens.space4),
         _buildTray(context, puzzle, animal),
       ],
     );
@@ -43,18 +50,15 @@ class _JigsawBoardState extends State<JigsawBoard> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final double maxWidth = constraints.maxWidth;
-        final double maxHeight = constraints.maxHeight.isFinite
-            ? constraints.maxHeight * 0.68
-            : maxWidth;
-        final double byWidth = maxWidth;
-        final double byHeight = maxHeight * puzzle.columns / puzzle.rows;
-        final double boardWidth = byWidth < byHeight ? byWidth : byHeight;
-        final double boardHeight = boardWidth * puzzle.rows / puzzle.columns;
+        final double maxHeight =
+            constraints.maxHeight.isFinite ? constraints.maxHeight : maxWidth;
+        // A square board keeps every cell the same shape as its source slice.
+        final double side = math.min(maxWidth, maxHeight);
 
         Widget board = SizedBox(
           key: _boardKey,
-          width: boardWidth,
-          height: boardHeight,
+          width: side,
+          height: side,
           child: DragTarget<int>(
             onWillAcceptWithDetails: (DragTargetDetails<int> details) => true,
             onAcceptWithDetails: (DragTargetDetails<int> details) {
@@ -74,7 +78,8 @@ class _JigsawBoardState extends State<JigsawBoard> {
                     ),
                   );
             },
-            builder: (BuildContext context, _, __) => _buildGrid(puzzle, animal),
+            builder: (BuildContext context, _, __) =>
+                _buildPieces(puzzle, animal, side),
           ),
         );
 
@@ -94,49 +99,63 @@ class _JigsawBoardState extends State<JigsawBoard> {
     );
   }
 
-  Widget _buildGrid(AnimalPuzzle puzzle, Animal animal) {
-    return Column(
-      children: List<Widget>.generate(puzzle.rows, (int row) {
-        return Expanded(
-          child: Row(
-            children: List<Widget>.generate(puzzle.columns, (int col) {
-              final int slot = row * puzzle.columns + col;
-              return Expanded(child: _buildSlot(slot, animal));
-            }),
+  Widget _buildPieces(AnimalPuzzle puzzle, Animal animal, double side) {
+    final double cellW = side / puzzle.columns;
+    final double cellH = side / puzzle.rows;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTokens.radiusMedium),
+      child: Stack(
+        children: <Widget>[
+          // Faint silhouette of the whole animal: the target the child builds.
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _GuidePainter(animal.emoji),
+                child: const SizedBox.expand(),
+              ),
+            ),
           ),
-        );
-      }),
+          for (int slot = 0; slot < puzzle.pieceCount; slot++)
+            Positioned(
+              left: (slot % puzzle.columns) * cellW,
+              top: (slot ~/ puzzle.columns) * cellH,
+              width: cellW,
+              height: cellH,
+              child: _buildSlot(slot, animal, puzzle),
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildSlot(int slot, Animal animal) {
+  Widget _buildSlot(int slot, Animal animal, AnimalPuzzle puzzle) {
     final bool filled = widget.state.slots[slot] != null;
     final bool hinted = widget.state.hintSlot == slot;
 
-    Widget child = filled
-        ? AnimalPicture(
-            animal: animal,
-            size: 64,
-            columns: widget.state.puzzle!.columns,
-            rows: widget.state.puzzle!.rows,
-            tile: slot,
-            background: AnimalImages.pastels[slot % AnimalImages.pastels.length],
-            rounded: true,
-          )
-        : AnimalPicture(
-            animal: animal,
-            size: 64,
-            columns: widget.state.puzzle!.columns,
-            rows: widget.state.puzzle!.rows,
-            tile: slot,
-            silhouette: true,
-            rounded: true,
-          );
-
-    child = Padding(
-      padding: const EdgeInsets.all(3),
-      child: child,
-    );
+    Widget child;
+    if (filled) {
+      child = AnimalPicture(
+        animal: animal,
+        size: 0,
+        columns: puzzle.columns,
+        rows: puzzle.rows,
+        tile: slot,
+        rounded: false,
+        seamless: true,
+        showBackground: false,
+      );
+    } else {
+      child = DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.18),
+          border: Border.all(
+            color: AppColors.outlineSoft.withValues(alpha: 0.7),
+            width: 1,
+          ),
+        ),
+      );
+    }
 
     if (hinted && !filled) {
       child = TweenAnimationBuilder<double>(
@@ -146,7 +165,6 @@ class _JigsawBoardState extends State<JigsawBoard> {
         builder: (BuildContext context, double value, Widget? inner) {
           return DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppTokens.radiusLarge),
               border: Border.all(
                 color: AppColors.gold.withValues(alpha: 0.35 + 0.45 * value),
                 width: 3,
@@ -168,8 +186,9 @@ class _JigsawBoardState extends State<JigsawBoard> {
     }
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
+        // Big enough to grab comfortably, but always at least three per row.
         final double piece = (constraints.maxWidth / (puzzle.columns + 1))
-            .clamp(48.0, 96.0);
+            .clamp(56.0, 112.0);
         return Wrap(
           alignment: WrapAlignment.center,
           spacing: AppTokens.space2,
@@ -187,6 +206,27 @@ class _JigsawBoardState extends State<JigsawBoard> {
       },
     );
   }
+}
+
+/// Paints the faint animal silhouette behind the board, using the exact same
+/// fit and centring as the composed picture so it lines up with the pieces.
+class _GuidePainter extends CustomPainter {
+  const _GuidePainter(this.emoji);
+
+  final String emoji;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    AnimalImages.paintGlyphSilhouette(
+      canvas,
+      size,
+      emoji,
+      AppColors.silhouette.withValues(alpha: 0.22),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GuidePainter oldDelegate) => oldDelegate.emoji != emoji;
 }
 
 class _TrayPiece extends StatelessWidget {
@@ -210,7 +250,8 @@ class _TrayPiece extends StatelessWidget {
       columns: puzzle.columns,
       rows: puzzle.rows,
       tile: pieceId,
-      background: AnimalImages.pastels[pieceId % AnimalImages.pastels.length],
+      rounded: true,
+      showBackground: false,
     );
 
     return Draggable<int>(

@@ -122,6 +122,24 @@ Future<void> openWorld(WidgetTester tester, String title) async {
   tester.takeException();
 }
 
+/// Opens letter [letter]'s detail sheet, then the full-screen tracing page, and
+/// waits until its glyph canvas has been rasterized.
+Future<void> openLetterTrace(WidgetTester tester, String letter) async {
+  await tester.tap(find.byKey(ValueKey<String>('letter-$letter')));
+  await openAndSettle(tester, const Duration(milliseconds: 600));
+  await tester.tap(find.text('Trace it!'));
+  await tester.pump();
+  for (int i = 0; i < 30; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
+    await settleFrames(tester);
+    // The "0%" badge only renders once the glyph mask is rasterized, so this
+    // also proves the canvas is ready to be traced.
+    if (find.text('0%').evaluate().isNotEmpty) return;
+  }
+}
+
 void main() {
   group('1. Alphabet home screen', () {
     testWidgets('loads directly (no auth) with the full A–Z grid', (
@@ -157,7 +175,9 @@ void main() {
         // Bottom overlay for the letter is shown.
         expect(find.text('A for Apple'), findsOneWidget);
         expect(find.text('Hear again'), findsOneWidget);
-        expect(find.byType(TracingCanvas), findsOneWidget);
+        // Tracing has moved to a dedicated full-screen page, opened from here.
+        expect(find.text('Trace it!'), findsOneWidget);
+        expect(find.byType(TracingCanvas), findsNothing);
 
         // No missing-asset error sentinel should ever appear.
         expect(find.textContaining('Unable to load asset'), findsNothing);
@@ -274,8 +294,7 @@ void main() {
 
         await openWorld(tester, 'Alphabet Land');
 
-        await tester.tap(find.byKey(const ValueKey<String>('letter-S')));
-        await openAndSettle(tester, const Duration(milliseconds: 600));
+        await openLetterTrace(tester, 'S');
 
         final Finder canvas = find.byType(TracingCanvas);
         expect(canvas, findsOneWidget);
@@ -299,8 +318,8 @@ void main() {
         await traceRealGlyph(tester, canvas, complete: true);
         expect(find.text('Great job!'), findsWidgets);
 
-        // The star is only earned once the thresholds are met.
-        expect(find.text('Traced!'), findsOneWidget);
+        // The big green "Next" is only offered once the trace is complete.
+        expect(find.text('Next'), findsOneWidget);
 
         // Let the confetti run out and the overlay's 2s auto-dismiss fire so
         // the test ends cleanly.
@@ -316,8 +335,7 @@ void main() {
       await pumpApp(tester);
 
       await openWorld(tester, 'Alphabet Land');
-      await tester.tap(find.byKey(const ValueKey<String>('letter-S')));
-      await openAndSettle(tester, const Duration(milliseconds: 600));
+      await openLetterTrace(tester, 'S');
       final Finder canvas = find.byType(TracingCanvas);
       await settleReal(tester, const Duration(milliseconds: 700));
 
@@ -336,7 +354,7 @@ void main() {
       await settleFrames(tester);
 
       expect(find.text('Great job!'), findsNothing);
-      expect(find.text('Traced!'), findsNothing);
+      expect(find.text('Next'), findsNothing);
       expect(
         tester.state<TracingCanvasState>(canvas).model!.isComplete,
         isFalse,
@@ -350,15 +368,14 @@ void main() {
       await pumpApp(tester);
 
       await openWorld(tester, 'Alphabet Land');
-      await tester.tap(find.byKey(const ValueKey<String>('letter-S')));
-      await openAndSettle(tester, const Duration(milliseconds: 600));
+      await openLetterTrace(tester, 'S');
       final Finder canvas = find.byType(TracingCanvas);
       await traceRealGlyph(tester, canvas, complete: false);
 
       await tester.tap(find.text('Try again'));
       await settleFrames(tester);
       expect(find.text('0%'), findsOneWidget);
-      expect(find.text('Traced!'), findsNothing);
+      expect(find.text('Next'), findsNothing);
     });
   });
 

@@ -31,6 +31,9 @@ flutter:
     - assets/data/
     # Brand logo pieces, each authored on the shared 380x330 canvas.
     - assets/logo/
+    # Optional recorded voice clips (letter_a.mp3, number_27.mp3, ...). Missing
+    # clips fall back to the on-device voice.
+    - assets/audio/voice/
 
   fonts:
     - family: Baloo2

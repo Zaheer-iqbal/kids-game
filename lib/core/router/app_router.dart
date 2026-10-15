@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/alphabet/presentation/pages/alphabet_world_page.dart';
+import '../../features/alphabet/presentation/pages/letter_trace_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/numbers/presentation/pages/number_trace_page.dart';
 import '../../features/lesson/presentation/pages/lesson_page.dart';
 import '../../features/numbers/presentation/pages/numbers_home_page.dart';
 import '../../features/onboarding/presentation/pages/intro_page.dart';
@@ -32,6 +34,12 @@ abstract final class AppRoutes {
   static const String lesson = '/lesson';
   static const String puzzles = '/puzzles';
   static const String myAnimals = '/my-animals';
+
+  /// `/trace/letter/<letter>` - full-screen letter tracing.
+  static String letterTrace(String letter) => '/trace/letter/$letter';
+
+  /// `/trace/number/<number>` - full-screen number tracing.
+  static String numberTrace(int number) => '/trace/number/$number';
 
   /// `/puzzles/<index>` - one animal puzzle.
   static String puzzleRoute(int index) => '$puzzles/$index';
@@ -152,6 +160,22 @@ class AppRouter {
         path: AppRoutes.myAnimals,
         pageBuilder: (BuildContext context, GoRouterState state) =>
             _softPage(child: const MyAnimalsPage(), state: state),
+      ),
+      GoRoute(
+        path: '/trace/letter/:letter',
+        pageBuilder: (BuildContext context, GoRouterState state) => _softPage(
+          child: LetterTracePage(letter: state.pathParameters['letter'] ?? 'A'),
+          state: state,
+        ),
+      ),
+      GoRoute(
+        path: '/trace/number/:number',
+        pageBuilder: (BuildContext context, GoRouterState state) => _softPage(
+          child: NumberTracePage(
+            number: int.tryParse(state.pathParameters['number'] ?? '') ?? 1,
+          ),
+          state: state,
+        ),
       ),
     ],
   );

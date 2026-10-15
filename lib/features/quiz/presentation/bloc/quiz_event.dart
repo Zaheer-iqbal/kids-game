@@ -35,3 +35,9 @@ class NextQuestion extends QuizEvent {
 class ReplaySound extends QuizEvent {
   const ReplaySound();
 }
+
+/// The child tapped the owl for help: hide one wrong option and say something
+/// encouraging.
+class QuizHintRequested extends QuizEvent {
+  const QuizHintRequested();
+}

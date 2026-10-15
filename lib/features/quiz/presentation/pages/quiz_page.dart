@@ -6,13 +6,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/mascot/mascot_cubit.dart';
+import '../../../../core/mascot/mascot_mood.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/celebration_overlay.dart';
-import '../../../../core/widgets/mascot_view.dart';
+import '../../../../core/widgets/mascot_speech_bubble.dart';
 import '../../../../core/widgets/mascot_widget.dart';
-import '../../../../core/widgets/pressable_scale.dart';
 import '../../domain/entities/quiz_option.dart';
 import '../../domain/entities/quiz_result.dart';
 import '../../domain/entities/quiz_type.dart';
@@ -177,7 +177,7 @@ class _QuizPlayView extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8, bottom: 8),
               child: Column(
                 children: <Widget>[
-                  _SoundButton(
+                  _OwlSoundButton(
                     onPressed: () =>
                         context.read<QuizBloc>().add(const ReplaySound()),
                   ),
@@ -217,6 +217,7 @@ class _QuizPlayView extends StatelessWidget {
                             key: ValueKey<String>('option-${option.key}'),
                             option: option,
                             entrancePhase: index / state.options.length,
+                            isHidden: state.hiddenKeys.contains(option.key),
                             isDimmed: state.revealCorrect &&
                                 option.key != state.targetKey,
                             isWrong: state.wrongOption == option.key,
@@ -238,17 +239,10 @@ class _QuizPlayView extends StatelessWidget {
             ),
           ),
           if (!compact)
-            const Padding(
-              padding: EdgeInsets.only(left: 6, top: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: MascotView(
-                  key: ValueKey<String>('quiz-mascot'),
-                  size: 86,
-                  bubbleLayout: MascotBubbleLayout.leading,
-                  bubbleMaxWidth: 200,
-                ),
-              ),
+            _QuizHintBar(
+              state: state,
+              onHint: () =>
+                  context.read<QuizBloc>().add(const QuizHintRequested()),
             ),
         ],
       ),
@@ -314,37 +308,52 @@ class _RetryPrompt extends StatelessWidget {
   }
 }
 
-class _SoundButton extends StatelessWidget {
-  const _SoundButton({required this.onPressed});
+/// The prompt control: the app's own owl, not a speaker icon. Tapping it
+/// replays the question and the owl flaps its beak and wings while it speaks.
+class _OwlSoundButton extends StatefulWidget {
+  const _OwlSoundButton({required this.onPressed});
 
   final VoidCallback onPressed;
 
   @override
+  State<_OwlSoundButton> createState() => _OwlSoundButtonState();
+}
+
+class _OwlSoundButtonState extends State<_OwlSoundButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _talk = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..addStatusListener((AnimationStatus status) {
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() {});
+      }
+    });
+
+  @override
+  void dispose() {
+    _talk.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    widget.onPressed();
+    setState(() => _talk.forward(from: 0));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return PressableScale(
-      onTap: onPressed,
-      child: Container(
-        width: 132,
-        height: 132,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[AppColors.quiz, Color(0xFFFFB199)],
-          ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: AppColors.quiz.withValues(alpha: 0.35),
-              blurRadius: 22,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.volume_up_rounded,
-          color: Colors.white,
-          size: 68,
+    return Semantics(
+      button: true,
+      label: 'Hear the question again',
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _handleTap,
+        child: MascotWidget(
+          key: const ValueKey<String>('quiz-sound-owl'),
+          mood: MascotMood.idle,
+          size: 132,
+          talking: _talk.isAnimating,
         ),
       ),
     );
@@ -384,6 +393,101 @@ class _ScoreChip extends StatelessWidget {
                   color: AppColors.ink,
                   fontWeight: FontWeight.w700,
                 ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuizHintBar extends StatefulWidget {
+  const _QuizHintBar({required this.state, required this.onHint});
+
+  final QuizState state;
+  final VoidCallback onHint;
+
+  @override
+  State<_QuizHintBar> createState() => _QuizHintBarState();
+}
+
+class _QuizHintBarState extends State<_QuizHintBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _talk = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..addStatusListener((AnimationStatus status) {
+      if (status == AnimationStatus.completed && mounted) setState(() {});
+    });
+
+  @override
+  void didUpdateWidget(_QuizHintBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state.hintToken != oldWidget.state.hintToken) {
+      _talk.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _talk.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final QuizState state = widget.state;
+    final bool supported = state.options.length > 2;
+    final int total = QuizState.maxHintsPerQuestion;
+    final int remaining = (total - state.hintsUsed).clamp(0, total);
+
+    final String? message = state.revealCorrect
+        ? null
+        : (supported && remaining == 0)
+            ? 'No hints left!'
+            : state.hintMessage;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 6, top: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          if (message != null) ...<Widget>[
+            Flexible(
+              child: MascotSpeechBubble(message: message, maxWidth: 200),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              // One bulb per hint: lit while available, grey once spent.
+              for (int i = 0; i < total; i++)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.lightbulb_rounded,
+                    size: 20,
+                    color: i < remaining
+                        ? AppColors.gold
+                        : AppColors.locked,
+                  ),
+                ),
+              const SizedBox(width: 4),
+              Semantics(
+                button: state.canHint,
+                label: 'Ask the owl for a hint',
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: state.canHint ? widget.onHint : null,
+                  child: MascotWidget(
+                    key: const ValueKey<String>('quiz-hint-owl'),
+                    mood: MascotMood.idle,
+                    size: 78,
+                    talking: _talk.isAnimating,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

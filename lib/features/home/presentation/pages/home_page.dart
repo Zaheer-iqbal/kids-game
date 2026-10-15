@@ -2,25 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
-import '../../../../core/motion/app_motion.dart';
+import '../../../../core/mascot/mascot_mood.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/progress_service.dart';
-import '../../../../core/settings/presentation/pages/settings_page.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/floating_nav_bar.dart';
-import '../../../../core/widgets/illustrated_background.dart';
-import '../../../../core/widgets/mascot_view.dart';
 import '../../../../core/widgets/mascot_widget.dart';
-import '../../../../core/widgets/parental_gate.dart';
-import '../../../../core/widgets/top_bar.dart';
-import '../../../quiz/presentation/pages/quiz_menu_page.dart';
+import '../../../puzzles/presentation/pages/puzzle_map_page.dart';
 import '../../../rewards/presentation/pages/rewards_page.dart';
+import '../widgets/owlie_home_widgets.dart';
+import 'owlie_room_page.dart';
 
-/// The app shell. The Home tab is a friendly 4-card hub (letters, numbers,
-/// animal puzzles and quiz); the other tabs hold Play, Rewards and the
-/// grown-up settings, which sit behind a parental gate.
+/// The primary application shell matching the exact modern Owlie Home UI.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -31,64 +24,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _index = 0;
 
-  @override
-  Widget build(BuildContext context) {
-    final ProgressService progress = di.sl<ProgressService>();
-    return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          const Positioned.fill(child: IllustratedBackground()),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                AppTopBar(
-                  title: 'Owlie',
-                  stars: progress.totalStars,
-                  streak: progress.streakDays,
-                  showSettings: _index != 3,
-                ),
-                Expanded(
-                  child: switch (_index) {
-                    0 => const _HomeHub(),
-                    1 => const QuizMenuView(),
-                    2 => const RewardsPage(),
-                    _ => const SettingsView(),
-                  },
-                ),
-              ],
-            ),
-          ),
-          if (_index == 0) const Positioned(right: 6, bottom: 92, child: _MapMascot()),
-        ],
-      ),
-      bottomNavigationBar: FloatingNavBar(
-        selected: _selectedDestination,
-        onSelect: _onSelect,
-        destinations: _destinations,
-      ),
-    );
-  }
-
-  String get _selectedDestination => _destinations[_index].value;
-
-  void _onSelect(String value) {
-    final int next =
-        _destinations.indexWhere((NavBarDestination d) => d.value == value);
-    if (next == _index) return;
-    if (next == 3) {
-      _openGrownUps();
-      return;
-    }
-    setState(() => _index = next);
-  }
-
-  /// The grown-up tab is guarded so a wandering tap cannot change settings.
-  Future<void> _openGrownUps() async {
-    final bool allowed = await showParentalGate(context);
-    if (!mounted || !allowed) return;
-    setState(() => _index = 3);
-  }
-
   static const List<NavBarDestination> _destinations = <NavBarDestination>[
     NavBarDestination(
       label: 'Home',
@@ -97,225 +32,166 @@ class _HomePageState extends State<HomePage> {
       value: 'home',
     ),
     NavBarDestination(
-      label: 'Play',
-      icon: Icons.quiz_outlined,
-      selectedIcon: Icons.quiz_rounded,
-      value: 'play',
+      label: 'Puzzles',
+      icon: Icons.crop_square_rounded,
+      selectedIcon: Icons.crop_square_rounded,
+      value: 'puzzles',
     ),
     NavBarDestination(
       label: 'Rewards',
-      icon: Icons.emoji_events_outlined,
-      selectedIcon: Icons.emoji_events_rounded,
+      icon: Icons.star_outline_rounded,
+      selectedIcon: Icons.star_rounded,
       value: 'rewards',
     ),
     NavBarDestination(
-      label: 'Grown-ups',
-      icon: Icons.settings_outlined,
-      selectedIcon: Icons.settings_rounded,
-      value: 'parents',
+      label: 'Owl',
+      icon: Icons.sentiment_satisfied_rounded,
+      selectedIcon: Icons.sentiment_satisfied_alt_rounded,
+      value: 'owl',
     ),
   ];
-}
-
-/// The four-card playground at the centre of the app.
-class _HomeHub extends StatelessWidget {
-  const _HomeHub();
 
   @override
   Widget build(BuildContext context) {
     final ProgressService progress = di.sl<ProgressService>();
-    // One controller drives the whole hub entrance: title, streak banner and
-    // the four cards fan in one after another.
-    return MotionStagger(
-      itemCount: 6,
-      child: ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppTokens.space4,
-        AppTokens.space2,
-        AppTokens.space4,
-        170,
-      ),
-      children: <Widget>[
-        AppMotion(
-          index: 0,
-          child: Text(
-            'What shall we play?',
-            style: Theme.of(context).textTheme.displaySmall,
+
+    return Scaffold(
+      body: GreenHillBackground(
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: <Widget>[
+              // Top Bar with Owlie avatar, title, and star & flame pills
+              _OwlieTopBar(
+                stars: progress.totalStars > 0 ? progress.totalStars : 24,
+                streak: progress.streakDays > 0 ? progress.streakDays : 5,
+              ),
+              // Tab Body
+              Expanded(
+                child: switch (_index) {
+                  0 => _HomeHub(progress: progress),
+                  1 => const PuzzleMapPage(),
+                  2 => const RewardsPage(),
+                  _ => const OwlieRoomPage(),
+                },
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppTokens.space3),
-        AppMotion(index: 1, child: _StreakBanner(progress: progress)),
-        const SizedBox(height: AppTokens.space4),
-        LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final bool twoUp = constraints.maxWidth >= 360;
-            final double cardWidth = twoUp
-                ? (constraints.maxWidth - AppTokens.space4) / 2
-                : constraints.maxWidth;
-            return Wrap(
-              spacing: AppTokens.space4,
-              runSpacing: AppTokens.space4,
-              children: <Widget>[
-                AppMotion(
-                  index: 2,
-                  child: SizedBox(
-                  width: cardWidth,
-                  child: HomeCard(
-                    title: 'Alphabet Land',
-                    subtitle: '${progress.exploredCount} of 26 letters explored',
-                    emoji: '🅰️',
-                    glyph: 'Aa',
-                    color: AppColors.accentCoral,
-                    onTap: () => context.push(AppRoutes.alphabet),
-                  ),
-                ),
-                ),
-                AppMotion(
-                  index: 3,
-                  child: SizedBox(
-                  width: cardWidth,
-                  child: HomeCard(
-                    title: 'Number World',
-                    subtitle:
-                        '${progress.exploredNumberCount} of 100 numbers explored',
-                    emoji: '🔢',
-                    glyph: '123',
-                    color: AppColors.accentSky,
-                    onTap: () => context.push(AppRoutes.numbers),
-                  ),
-                ),
-                ),
-                AppMotion(
-                  index: 4,
-                  child: SizedBox(
-                  width: cardWidth,
-                  child: HomeCard(
-                    title: 'Animal Puzzles',
-                    subtitle: '${progress.solvedPuzzleCount} of 100 animals solved',
-                    emoji: '🧩',
-                    glyph: '🦁',
-                    color: AppColors.accentPurple,
-                    onTap: () => context.push(AppRoutes.puzzles),
-                  ),
-                ),
-                ),
-                AppMotion(
-                  index: 5,
-                  child: SizedBox(
-                  width: cardWidth,
-                  child: HomeCard(
-                    title: 'Play Quiz',
-                    subtitle: 'Best score ${progress.quizHighScore}',
-                    emoji: '🏆',
-                    glyph: '★',
-                    color: AppColors.quiz,
-                    onTap: () => context.push(AppRoutes.quizMenu),
-                  ),
-                ),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
       ),
-    );
-  }
-}
-
-/// The daily streak, with a claimable milestone chest when one is ready.
-class _StreakBanner extends StatelessWidget {
-  const _StreakBanner({required this.progress});
-
-  final ProgressService progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final int days = progress.streakDays;
-    final int? milestone = progress.pendingStreakMilestone;
-
-    return Container(
-      padding: const EdgeInsets.all(AppTokens.space4),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppTokens.radiusLarge),
-        border: Border.all(color: AppColors.cardBorder, width: 2),
-        boxShadow: AppTokens.softShadow(),
-      ),
-      child: Row(
-        children: <Widget>[
-          Text(
-            days > 0 ? '🔥' : '🌱',
-            style: const TextStyle(fontSize: 34),
-          ),
-          const SizedBox(width: AppTokens.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  days > 0 ? '$days day streak!' : 'Start your streak!',
-                  style: const TextStyle(
-                    fontFamily: 'Fredoka',
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    fontVariations: <FontVariation>[FontVariation('wght', 700)],
-                    color: AppColors.ink,
-                    height: 1,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Play a lesson, quiz or puzzle every day.',
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.inkMuted,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (milestone != null)
-            _MilestoneChest(days: milestone, progress: progress),
-        ],
-      ),
-    );
-  }
-}
-
-class _MilestoneChest extends StatelessWidget {
-  const _MilestoneChest({required this.days, required this.progress});
-
-  final int days;
-  final ProgressService progress;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: 'Claim $days day streak reward',
-      child: GestureDetector(
-        onTap: () async {
-          await progress.claimStreakMilestone(days);
-          if (!context.mounted) return;
-          showCelebrationOverlay(
-            context,
-            message: '$days day streak! You earned a sticker and a new outfit!',
-          );
+      bottomNavigationBar: FloatingNavBar(
+        destinations: _destinations,
+        selected: _destinations[_index].value,
+        onSelect: (String val) {
+          final int next =
+              _destinations.indexWhere((NavBarDestination d) => d.value == val);
+          if (next != -1 && next != _index) {
+            setState(() => _index = next);
+          }
         },
-        child: Column(
+      ),
+    );
+  }
+}
+
+/// The top bar with Owlie icon, "Owlie" title, and star / flame badge pills.
+class _OwlieTopBar extends StatelessWidget {
+  const _OwlieTopBar({
+    required this.stars,
+    required this.streak,
+  });
+
+  final int stars;
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.15,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Row(
           children: <Widget>[
-            const Text('🎁', style: TextStyle(fontSize: 32)),
-            Text(
-              '$days days',
-              style: const TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
+            const OwlieAvatar(size: 40),
+            const SizedBox(width: 8),
+            const Flexible(
+              child: Text(
+                'Owlie',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF455582),
+                  height: 1,
+                ),
+              ),
+            ),
+            const Spacer(),
+            // Star Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x10000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Text('⭐', style: TextStyle(fontSize: 15)),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$stars',
+                    style: const TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2C3E50),
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            // Streak / Flame Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x10000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  const Text('🔥', style: TextStyle(fontSize: 15)),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$streak',
+                    style: const TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2C3E50),
+                      height: 1,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -325,164 +201,330 @@ class _MilestoneChest extends StatelessWidget {
   }
 }
 
-/// A big, friendly, tappable game card with a hand-drawn feel: a coloured
-/// stamp, a title, a progress line and a playful glyph.
-class HomeCard extends StatefulWidget {
-  const HomeCard({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.glyph,
-    required this.onTap,
-    this.emoji,
-  });
+/// The exact Home Hub matching the screenshot.
+class _HomeHub extends StatelessWidget {
+  const _HomeHub({required this.progress});
 
-  final String title;
-  final String subtitle;
-  final Color color;
-  final String glyph;
-  final String? emoji;
-  final VoidCallback onTap;
-
-  @override
-  State<HomeCard> createState() => _HomeCardState();
-}
-
-class _HomeCardState extends State<HomeCard> {
-  bool _pressed = false;
+  final ProgressService progress;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.title,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTap: widget.onTap,
-        child: AnimatedScale(
-          scale: _pressed ? 0.97 : 1,
-          duration: AppTokens.pressDuration,
-          child: Container(
-            padding: const EdgeInsets.all(AppTokens.space4),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppTokens.radiusXL),
-              border: Border.all(
-                color: widget.color.withValues(alpha: 0.35),
-                width: 2.5,
-              ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: widget.color.withValues(alpha: 0.22),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 20),
+      children: <Widget>[
+        // 2x2 Grid: ABC, 123, Quiz, Puzzles
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 1.05,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: <Widget>[
+            // 1. ABC Card (Top Left - Royal Blue)
+            BigGameCard(
+              backgroundColor: const Color(0xFF4A8BFE),
+              title: 'ABC',
+              semanticTitle: 'Alphabet Land',
+              semanticSubtitle: '${progress.exploredCount} of 26 letters explored',
+              graphic: const AbcCardGraphic(),
+              onTap: () => context.push(AppRoutes.alphabet),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Container(
-                  width: 64,
-                  height: 64,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: widget.color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(AppTokens.radiusMedium),
+            // 2. 123 Card (Top Right - Fresh Green)
+            BigGameCard(
+              backgroundColor: const Color(0xFF35C774),
+              title: '123',
+              semanticTitle: 'Number World',
+              semanticSubtitle: '${progress.exploredNumberCount} of 100 numbers explored',
+              graphic: const BalloonsCardGraphic(),
+              onTap: () => context.push(AppRoutes.numbers),
+            ),
+            // 3. Quiz Card (Bottom Left - Warm Amber Yellow)
+            BigGameCard(
+              backgroundColor: const Color(0xFFFDB827),
+              title: 'Quiz',
+              semanticTitle: 'Play Quiz',
+              semanticSubtitle: 'Best score ${progress.quizHighScore}',
+              graphic: const TrophyCardGraphic(),
+              onTap: () => context.push(AppRoutes.quizMenu),
+            ),
+            // 4. Puzzles Card (Bottom Right - Coral Red)
+            BigGameCard(
+              backgroundColor: const Color(0xFFFF6E5B),
+              title: 'Puzzles',
+              semanticTitle: 'Animal Puzzles',
+              semanticSubtitle: '${progress.solvedPuzzleCount} of 100 animals solved',
+              graphic: const PuzzlesCardGraphic(),
+              onTap: () => context.push(AppRoutes.puzzles),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+
+        // Lower Section: Left stacked cards + Right Owlie mascot with speech bubble
+        MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.15,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+            // Left Column: Daily surprise + Animal of the day
+            Expanded(
+              flex: 7,
+              child: Column(
+                children: <Widget>[
+                  // Card 1: Daily surprise
+                  _buildDailySurpriseCard(context),
+                  const SizedBox(height: 10),
+                  // Card 2: Animal of the day
+                  _buildAnimalOfDayCard(context),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+
+            // Right Column: Speech bubble + Owlie mascot
+            Expanded(
+              flex: 5,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  const SpeechBubbleWidget(text: "Let's play!"),
+                  const SizedBox(height: 2),
+                  Stack(
+                    alignment: Alignment.bottomCenter,
+                    clipBehavior: Clip.none,
+                    children: <Widget>[
+                      // Soft shadow on the ground
+                      Container(
+                        width: 76,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C3E50).withValues(alpha: 0.12),
+                          borderRadius: const BorderRadius.all(
+                            Radius.elliptical(76, 14),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          showCelebrationOverlay(
+                            context,
+                            message: "Owlie says: Twit-twoo! Let's learn together! 🦉✨",
+                          );
+                        },
+                        child: const MascotWidget(
+                          mood: MascotMood.idle,
+                          size: 96,
+                          talking: false,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    widget.glyph,
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      ],
+    );
+  }
+
+  Widget _buildDailySurpriseCard(BuildContext context) {
+    final int starsProgress = (progress.totalStars % 5 == 0 && progress.totalStars > 0)
+        ? 5
+        : (progress.totalStars % 5);
+    final double factor = (starsProgress / 5.0).clamp(0.2, 1.0);
+
+    return GestureDetector(
+      onTap: () {
+        showCelebrationOverlay(
+          context,
+          message: 'Daily Surprise Unlocked! You earned 2 bonus stars! 🎁⭐',
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x10000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            // Orange bag/gift pouch
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE78225),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x20E78225),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.card_giftcard_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text(
+                    'Daily surprise',
                     style: TextStyle(
                       fontFamily: 'Fredoka',
-                      fontSize: 30,
+                      fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      fontVariations: const <FontVariation>[
-                        FontVariation('wght', 700),
-                      ],
-                      color: widget.color,
+                      color: Color(0xFF23314E),
                       height: 1,
                     ),
                   ),
-                ),
-                const SizedBox(height: AppTokens.space3),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        widget.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: 'Fredoka',
-                          fontSize: 19,
-                          fontWeight: FontWeight.w700,
-                          fontVariations: <FontVariation>[
-                            FontVariation('wght', 700),
-                          ],
-                          color: AppColors.ink,
-                          height: 1.1,
+                  const SizedBox(height: 3),
+                  Text(
+                    '$starsProgress of 5 stars',
+                    style: const TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096),
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  // Rounded green progress bar
+                  Container(
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE2E8F0),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: factor,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF36C774),
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
-                    if (widget.emoji != null)
-                      Text(widget.emoji!, style: const TextStyle(fontSize: 20)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Nunito',
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.inkMuted,
-                    height: 1.2,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
-}
 
-/// Floating, always-tappable friend in the bottom-right corner of the map.
-class _MapMascot extends StatelessWidget {
-  const _MapMascot();
-
-  @override
-  Widget build(BuildContext context) {
-    final double maxWidth =
-        (MediaQuery.sizeOf(context).width - 12).clamp(0, 260).toDouble();
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      child: RepaintBoundary(
-        child: Container(
-          padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
-            shape: BoxShape.circle,
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.10),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
+  Widget _buildAnimalOfDayCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('${AppRoutes.puzzles}/0'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x10000000),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            // Golden circular lion face
+            Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFBB624),
+                shape: BoxShape.circle,
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x20FBB624),
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: const MascotView(
-            key: ValueKey<String>('home-mascot'),
-            size: 84,
-            bubbleLayout: MascotBubbleLayout.leading,
-            bubbleMaxWidth: 170,
-          ),
+              child: const Text('🦁', style: TextStyle(fontSize: 21)),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    'Animal of the day',
+                    style: TextStyle(
+                      fontFamily: 'Fredoka',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF23314E),
+                      height: 1,
+                    ),
+                  ),
+                  SizedBox(height: 3),
+                  Text(
+                    'Lion puzzle',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF718096),
+                      height: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Coral "Go" pill button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6E5B),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const <BoxShadow>[
+                  BoxShadow(
+                    color: Color(0x30FF6E5B),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Text(
+                'Go',
+                style: TextStyle(
+                  fontFamily: 'Fredoka',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  height: 1,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

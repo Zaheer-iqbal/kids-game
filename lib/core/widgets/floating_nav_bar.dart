@@ -45,15 +45,18 @@ class FloatingNavBar extends StatelessWidget {
           AppTokens.space3,
         ),
         child: Container(
-          padding: const EdgeInsets.all(AppTokens.space2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.space2,
+            vertical: 4,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppTokens.radiusPill),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -91,7 +94,9 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = active ? Colors.white : AppColors.inkSoft;
+    const Color activeColor = Color(0xFF5C6BC0);
+    const Color inactiveColor = Color(0xFF718096);
+    final Color textColor = active ? activeColor : inactiveColor;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -100,17 +105,22 @@ class _NavBarItem extends StatelessWidget {
         duration: AppTokens.pressDuration,
         curve: AppTokens.easeOutCubic,
         height: 56,
-        decoration: BoxDecoration(
-          color: active ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-        ),
+        color: Colors.transparent,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Icon(
-              active ? destination.selectedIcon : destination.icon,
-              size: 24,
-              color: color,
+            AnimatedContainer(
+              duration: AppTokens.pressDuration,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+              decoration: BoxDecoration(
+                color: active ? const Color(0xFFE8EAF6) : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                active ? destination.selectedIcon : destination.icon,
+                size: 24,
+                color: active ? activeColor : inactiveColor,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
@@ -120,10 +130,10 @@ class _NavBarItem extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'Nunito',
                 fontSize: 11,
-                fontVariations: const <FontVariation>[
-                  FontVariation('wght', 800),
+                fontVariations: <FontVariation>[
+                  FontVariation('wght', active ? 800 : 600),
                 ],
-                color: color,
+                color: textColor,
                 height: 1,
               ),
             ),

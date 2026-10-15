@@ -3,10 +3,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../core/router/app_router.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/services/progress_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/widgets/entrance.dart';
 import '../../../../core/widgets/progress_ring.dart';
 import '../../../../core/widgets/star_badge.dart';
 import '../../../quiz/domain/entities/quiz_type.dart';
@@ -25,7 +25,9 @@ class RewardsPage extends StatelessWidget {
     final int numbers = progress.exploredNumberCount;
     final int stars = progress.totalStars;
 
-    return ListView(
+    return MotionStagger(
+      itemCount: 6,
+      child: ListView(
       padding: const EdgeInsets.fromLTRB(
         AppTokens.space4,
         AppTokens.space2,
@@ -38,7 +40,7 @@ class RewardsPage extends StatelessWidget {
           style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ink),
         ),
         const SizedBox(height: AppTokens.space4),
-        StaggerEntrance(
+        AppMotion(
           index: 0,
           child: Container(
             padding: const EdgeInsets.all(AppTokens.space5),
@@ -90,17 +92,17 @@ class RewardsPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppTokens.space5),
-        StaggerEntrance(
+        AppMotion(
           index: 1,
           child: const _StreakCard(),
         ),
         const SizedBox(height: AppTokens.space4),
-        StaggerEntrance(
+        AppMotion(
           index: 2,
           child: const _MyAnimalsCard(),
         ),
         const SizedBox(height: AppTokens.space5),
-        StaggerEntrance(
+        AppMotion(
           index: 3,
           child: _BadgeCard(
             title: 'Letter badges',
@@ -114,8 +116,8 @@ class RewardsPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppTokens.space4),
-        StaggerEntrance(
-          index: 2,
+        AppMotion(
+          index: 4,
           child: _BadgeCard(
             title: 'Number badges',
             caption: '$numbers of 100 numbers explored',
@@ -126,8 +128,8 @@ class RewardsPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppTokens.space4),
-        StaggerEntrance(
-          index: 3,
+        AppMotion(
+          index: 5,
           child: Container(
             padding: const EdgeInsets.all(AppTokens.space4),
             decoration: BoxDecoration(
@@ -160,6 +162,7 @@ class RewardsPage extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }

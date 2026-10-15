@@ -279,4 +279,50 @@ class ProgressService {
     final DateTime local = day.toLocal();
     return DateTime(local.year, local.month, local.day);
   }
+
+  // ----------------------------------------------------- owlie customization
+  static const String _owlieHatKey = 'owlie_selected_hat';
+  static const String _owlieRoomKey = 'owlie_selected_room';
+  static const String _owlieFestivalKey = 'owlie_selected_festival';
+  static const String _owlieChildNameKey = 'owlie_child_name';
+
+  int get selectedHat => _prefs.getInt(_owlieHatKey) ?? 0;
+  Future<void> setSelectedHat(int index) => _prefs.setInt(_owlieHatKey, index);
+
+  int get selectedRoom => _prefs.getInt(_owlieRoomKey) ?? 0;
+  Future<void> setSelectedRoom(int index) => _prefs.setInt(_owlieRoomKey, index);
+
+  String get selectedFestival => _prefs.getString(_owlieFestivalKey) ?? 'Eid';
+  Future<void> setSelectedFestival(String name) =>
+      _prefs.setString(_owlieFestivalKey, name);
+
+  String get childName => _prefs.getString(_owlieChildNameKey) ?? 'Little Champion';
+  Future<void> setChildName(String name) =>
+      _prefs.setString(_owlieChildNameKey, name);
+
+  // Bonus star awards (used by daily mission, challenges, etc.)
+  Future<void> awardBonusStars(int count) async {
+    final int current = puzzleBonusStars;
+    await _prefs.setInt(_puzzleBonusKey, current + count);
+    await recordDailyActivity();
+  }
+
+  // Daily mission claim tracker
+  String get _dailyMissionClaimKey => 'daily_mission_claimed_${dayKey(_now())}';
+  bool get isDailyMissionClaimed => _prefs.getBool(_dailyMissionClaimKey) ?? false;
+  Future<void> markDailyMissionClaimed() =>
+      _prefs.setBool(_dailyMissionClaimKey, true);
+
+  // Weekly challenge claim tracker
+  String get _weeklyChallengeClaimKey {
+    final DateTime now = _now();
+    final int weekNumber =
+        (now.difference(DateTime(now.year, 1, 1)).inDays / 7).floor();
+    return 'weekly_challenge_claimed_${now.year}_$weekNumber';
+  }
+
+  bool get isWeeklyChallengeClaimed =>
+      _prefs.getBool(_weeklyChallengeClaimKey) ?? false;
+  Future<void> markWeeklyChallengeClaimed() =>
+      _prefs.setBool(_weeklyChallengeClaimKey, true);
 }

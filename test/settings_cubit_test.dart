@@ -128,6 +128,45 @@ void main() {
       await cubit.close();
     });
 
+    test('voice speed and chosen voice survive a restart', () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final SharedPreferences store = await SharedPreferences.getInstance();
+      final SettingsCubit cubit =
+          SettingsCubit(repository: SettingsRepositoryImpl(store))..load();
+
+      cubit.setSpeechRate(0.3);
+      cubit.setVoiceName('en-US-x-local');
+      await pumpEventQueue();
+      await cubit.close();
+
+      final SettingsCubit reopened =
+          SettingsCubit(repository: SettingsRepositoryImpl(store))..load();
+      expect(reopened.state.speechRate, 0.3);
+      expect(reopened.state.voiceName, 'en-US-x-local');
+
+      await reopened.close();
+    });
+
+    test('clearing the voice goes back to automatic', () async {
+      final SettingsCubit cubit = await loadedCubit();
+
+      cubit.setVoiceName('en-GB-Kate');
+      expect(cubit.state.voiceName, 'en-GB-Kate');
+
+      cubit.setVoiceName(null);
+      expect(cubit.state.voiceName, isNull);
+      await pumpEventQueue();
+
+      final SharedPreferences store = await SharedPreferences.getInstance();
+      expect(
+        store.getString(SettingsRepositoryImpl.voiceNameKey),
+        isNull,
+        reason: 'automatic must clear the stored voice, not keep the old one',
+      );
+
+      await cubit.close();
+    });
+
     test('a failed write cannot break the screen', () async {
       final SettingsCubit cubit =
           SettingsCubit(repository: const _BrokenRepository())

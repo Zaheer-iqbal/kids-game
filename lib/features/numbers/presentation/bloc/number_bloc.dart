@@ -51,7 +51,9 @@ class NumberBloc extends Bloc<NumberEvent, NumberState> {
     // fire-and-forget side effect: the TTS future must never gate the explored
     // badge/header update (it can hang when the platform engine is absent).
     await _progressService.markNumberExplored(event.number.number);
-    unawaited(_audioService.speakNumber(event.number.word));
+    unawaited(
+      _audioService.speakNumber(event.number.word, value: event.number.number),
+    );
     if (current is NumberLoaded) {
       emit(NumberLoaded(
         numbers: current.numbers,

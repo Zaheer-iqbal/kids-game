@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -6,9 +7,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/animal.dart';
 
 /// Builds (and caches) the animal "stickers" fully in code: each emoji is
-/// painted onto a soft pastel rounded canvas with [PictureRecorder] and
-/// [TextPainter], turned into a [ui.Image] and — for jigsaws and sliding
-/// puzzles — sliced into tiles. No image or font assets are shipped.
+/// painted, fit-to-contain and centred, onto a fixed square canvas with
+/// [PictureRecorder] and [TextPainter], turned into a [ui.Image] and — for
+/// jigsaws and sliding puzzles — sliced into an exact partition of that image.
+/// No image or font assets are shipped.
 ///
 /// Everything uses `toImageSync`, so boards can be laid out synchronously; if
 /// the platform cannot rasterise (e.g. a bare unit-test binding) the getters
@@ -19,8 +21,13 @@ class AnimalImages {
 
   static final AnimalImages instance = AnimalImages._();
 
-  /// Base sticker resolution; divisible by 2, 3 and 4 so slices stay crisp.
-  static const int baseSize = 384;
+  /// Fixed square composition size. Divisible by 2 and 4 (and near-evenly by
+  /// 3), so slices stay crisp on every supported grid.
+  static const int canvas = 1024;
+
+  /// Fraction of the canvas the glyph fills, leaving a comfortable margin so
+  /// no part of the animal is ever clipped at the edges.
+  static const double glyphFill = 0.84;
 
   static const List<Color> pastels = <Color>[
     Color(0xFFDCEBFF),
@@ -37,40 +44,87 @@ class AnimalImages {
 
   static Color colorFor(int animalId) => pastels[animalId % pastels.length];
 
-  /// The whole sticker for [animal].
+  /// The whole picture for [animal]: a pastel card with the centred animal.
+  /// This is what a finished puzzle looks like, so every slice below is a
+  /// literal crop of this one image.
   ui.Image? full(Animal animal) => _image('full:${animal.id}', () {
+        final Size size = Size.square(AnimalImages.canvas.toDouble());
         return _record(
-          Size.square(baseSize.toDouble()),
+          size,
           (Canvas canvas) => paintSticker(
             canvas,
-            Size.square(baseSize.toDouble()),
+            size,
             animal.emoji,
             colorFor(animal.id),
           ),
         );
       });
 
+  /// The animal glyph alone on a transparent canvas. Used to draw the faint
+  /// silhouette guide behind a jigsaw board, aligned exactly with the pieces.
+  ui.Image? glyph(Animal animal) => _image('glyph:${animal.id}', () {
+        final Size size = Size.square(AnimalImages.canvas.toDouble());
+        return _record(
+          size,
+          (Canvas canvas) => paintCenteredGlyph(canvas, size, animal.emoji),
+        );
+      });
+
   /// One tile of a [columns] x [rows] board, top-left to bottom-right.
   ui.Image? slice(Animal animal, int columns, int rows, int tile) {
-    final int base = baseSize;
-    final double tileW = base / columns;
-    final double tileH = base / rows;
-    final int col = tile % columns;
-    final int row = tile ~/ columns;
-    final Rect source = Rect.fromLTWH(col * tileW, row * tileH, tileW, tileH);
+    final List<Rect> rects = sliceRects(canvas, canvas, columns, rows);
+    if (tile < 0 || tile >= rects.length) return null;
+    final Rect source = rects[tile];
 
     return _image('slice:${animal.id}:${columns}x$rows:$tile', () {
-      final ui.Image? fullImage = full(animal);
-      if (fullImage == null) return null;
-      return _record(Size(tileW, tileH), (Canvas canvas) {
+      final ui.Image? sheet = full(animal);
+      if (sheet == null) return null;
+      return _record(source.size, (Canvas canvas) {
         canvas.drawImageRect(
-          fullImage,
+          sheet,
           source,
-          Rect.fromLTWH(0, 0, tileW, tileH),
+          Offset.zero & source.size,
           Paint()..filterQuality = FilterQuality.medium,
         );
       });
     });
+  }
+
+  /// The exact source rectangles for a [columns] x [rows] partition of a
+  /// [width] x [height] image, in row-major order.
+  ///
+  /// Edges are rounded to whole pixels and shared between neighbours, so the
+  /// rectangles tile the image **exactly**: their union is the full image and
+  /// no two of them overlap. This is the property the puzzle board relies on
+  /// to rebuild one picture from its pieces.
+  static List<Rect> sliceRects(int width, int height, int columns, int rows) {
+    final List<int> xs = _edges(width, columns);
+    final List<int> ys = _edges(height, rows);
+    final List<Rect> rects = <Rect>[];
+    for (int row = 0; row < rows; row++) {
+      for (int col = 0; col < columns; col++) {
+        rects.add(
+          Rect.fromLTRB(
+            xs[col].toDouble(),
+            ys[row].toDouble(),
+            xs[col + 1].toDouble(),
+            ys[row + 1].toDouble(),
+          ),
+        );
+      }
+    }
+    return rects;
+  }
+
+  /// Integer pixel edges for splitting [length] into [segments] parts. The
+  /// first is always 0 and the last always [length], so the parts add up.
+  static List<int> _edges(int length, int segments) {
+    final List<int> edges = <int>[0];
+    for (int i = 1; i < segments; i++) {
+      edges.add((length * i / segments).round());
+    }
+    edges.add(length);
+    return edges;
   }
 
   ui.Image? _image(String key, ui.Image? Function() build) {
@@ -105,15 +159,60 @@ class AnimalImages {
     }
   }
 
-  /// Paints an emoji glyph, transparent everywhere else. The pastel card is
-  /// drawn by the widget, so a slice stays just a piece of the animal and can
-  /// be tinted into a clean silhouette. Public so tests can render it too.
-  static void paintSticker(Canvas canvas, Size size, String emoji, Color bg) {
-    final TextPainter painter = TextPainter(
+  /// Paints the finished picture: a flat [background] with the emoji scaled to
+  /// fit and centred exactly on top. Public so tests can render it too.
+  static void paintSticker(Canvas canvas, Size size, String emoji, Color background) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = background);
+    paintCenteredGlyph(canvas, size, emoji);
+  }
+
+  /// Draws [emoji] scaled with `BoxFit.contain` (plus a small margin) and
+  /// centred exactly inside [size]. The glyph is measured first, so the whole
+  /// animal always lands square in the middle no matter how the font reports
+  /// its line box.
+  static void paintCenteredGlyph(Canvas canvas, Size size, String emoji) {
+    final TextPainter painter = _emojiPainter(emoji, size.width * 0.9);
+    final double width = painter.width;
+    final double height = painter.height;
+    if (width <= 0 || height <= 0) return;
+
+    final double scale = math.min(
+      size.width * glyphFill / width,
+      size.height * glyphFill / height,
+    );
+    final double dx = (size.width - width * scale) / 2;
+    final double dy = (size.height - height * scale) / 2;
+
+    canvas.save();
+    canvas.translate(dx, dy);
+    canvas.scale(scale);
+    painter.paint(canvas, Offset.zero);
+    canvas.restore();
+  }
+
+  /// A flat single-colour silhouette of the animal, drawn with the same fit
+  /// and centring as [paintSticker], so it lines up with the puzzle pieces.
+  static void paintGlyphSilhouette(
+    Canvas canvas,
+    Size size,
+    String emoji,
+    Color color,
+  ) {
+    canvas.saveLayer(
+      Offset.zero & size,
+      Paint()..colorFilter = ColorFilter.mode(color, BlendMode.srcIn),
+    );
+    paintCenteredGlyph(canvas, size, emoji);
+    canvas.restore();
+  }
+
+  static TextPainter _emojiPainter(String emoji, double fontSize) {
+    return TextPainter(
       text: TextSpan(
         text: emoji,
         style: TextStyle(
-          fontSize: size.width * 0.62,
+          fontSize: fontSize,
+          height: 1.0,
           fontFamilyFallback: const <String>[
             'Noto Color Emoji',
             'Apple Color Emoji',
@@ -124,13 +223,6 @@ class AnimalImages {
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
-    painter.paint(
-      canvas,
-      Offset(
-        (size.width - painter.width) / 2,
-        (size.height - painter.height) / 2,
-      ),
-    );
   }
 
   @visibleForTesting
@@ -143,10 +235,9 @@ class AnimalImages {
   }
 }
 
-/// A code-drawn animal sticker, optionally showing just one board tile.
-///
-/// Shows the rasterised sticker when available and falls back to plain emoji
-/// text otherwise, so tests and first frames are never empty.
+/// A code-drawn animal sticker: either the whole picture, a single puzzle
+/// tile, or a flat silhouette. Falls back to plain emoji text when the
+/// platform cannot rasterise, so tests and first frames are never empty.
 class AnimalPicture extends StatelessWidget {
   const AnimalPicture({
     super.key,
@@ -159,10 +250,15 @@ class AnimalPicture extends StatelessWidget {
     this.showBackground = true,
     this.background,
     this.silhouette = false,
+    this.seamless = false,
   });
 
   final Animal animal;
+
+  /// Side length for the square sticker. Ignored when [seamless] is true, in
+  /// which case the picture fills whatever space it is given.
   final double size;
+
   final int? columns;
   final int? rows;
   final int? tile;
@@ -173,6 +269,10 @@ class AnimalPicture extends StatelessWidget {
   /// Renders the sticker (or one slice) as a single flat silhouette colour.
   final bool silhouette;
 
+  /// Draws the tile edge to edge with no rounding or inset, so neighbouring
+  /// tiles join seamlessly into one picture on a board.
+  final bool seamless;
+
   bool get _isSlice => tile != null && columns != null && rows != null;
 
   @override
@@ -181,26 +281,21 @@ class AnimalPicture extends StatelessWidget {
         ? AnimalImages.instance.slice(animal, columns!, rows!, tile!)
         : AnimalImages.instance.full(animal);
 
-    if (image == null) {
-      return _fallback();
-    }
+    if (image == null) return _fallback();
+
+    final double radius = seamless || !rounded ? 0 : size * 0.16;
     final Widget painted = CustomPaint(
-      size: Size.square(size),
+      size: seamless ? Size.zero : Size.square(size),
       painter: _StickerPainter(
         image: image,
-        radius: rounded ? size * 0.16 : 0,
-        paintBackground: showBackground && !silhouette,
+        radius: radius,
+        paintBackground: !seamless && showBackground && !silhouette,
         background: background ?? AnimalImages.colorFor(animal.id),
+        silhouetteColor: silhouette ? AppColors.silhouette : null,
       ),
+      child: seamless ? const SizedBox.expand() : null,
     );
-    if (!silhouette) return painted;
-    return ColorFiltered(
-      colorFilter: ColorFilter.mode(
-        AppColors.silhouette,
-        BlendMode.srcIn,
-      ),
-      child: painted,
-    );
+    return painted;
   }
 
   Widget _fallback() {
@@ -216,23 +311,22 @@ class AnimalPicture extends StatelessWidget {
       ),
     );
     final Widget card = Container(
-      width: size,
-      height: size,
+      width: seamless ? null : size,
+      height: seamless ? null : size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: showBackground && !silhouette
             ? (background ?? AnimalImages.colorFor(animal.id))
             : null,
-        borderRadius: rounded ? BorderRadius.circular(size * 0.16) : null,
+        borderRadius: !seamless && rounded
+            ? BorderRadius.circular(size * 0.16)
+            : null,
       ),
       child: glyph,
     );
     if (!silhouette) return card;
     return ColorFiltered(
-      colorFilter: ColorFilter.mode(
-        AppColors.silhouette,
-        BlendMode.srcIn,
-      ),
+      colorFilter: ColorFilter.mode(AppColors.silhouette, BlendMode.srcIn),
       child: card,
     );
   }
@@ -255,31 +349,30 @@ class AnimalSilhouette extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColorFiltered(
-      colorFilter: ColorFilter.mode(
-        color ?? AppColors.silhouette,
-        BlendMode.srcIn,
-      ),
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: Center(
-          child: Text(
-            emoji,
-            style: TextStyle(
-              fontSize: size * 0.6,
-              height: 1,
-              fontFamilyFallback: const <String>[
-                'Noto Color Emoji',
-                'Apple Color Emoji',
-                'Segoe UI Emoji',
-              ],
-            ),
-          ),
-        ),
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _GlyphSilhouettePainter(
+        emoji: emoji,
+        color: color ?? AppColors.silhouette,
       ),
     );
   }
+}
+
+class _GlyphSilhouettePainter extends CustomPainter {
+  const _GlyphSilhouettePainter({required this.emoji, required this.color});
+
+  final String emoji;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    AnimalImages.paintGlyphSilhouette(canvas, size, emoji, color);
+  }
+
+  @override
+  bool shouldRepaint(_GlyphSilhouettePainter oldDelegate) =>
+      oldDelegate.emoji != emoji || oldDelegate.color != color;
 }
 
 class _StickerPainter extends CustomPainter {
@@ -288,12 +381,14 @@ class _StickerPainter extends CustomPainter {
     required this.radius,
     required this.paintBackground,
     required this.background,
+    this.silhouetteColor,
   });
 
   final ui.Image image;
   final double radius;
   final bool paintBackground;
   final Color background;
+  final Color? silhouetteColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -304,11 +399,15 @@ class _StickerPainter extends CustomPainter {
     if (paintBackground) {
       canvas.drawRect(dest, Paint()..color = background);
     }
+    final Paint paint = Paint()..filterQuality = FilterQuality.medium;
+    if (silhouetteColor != null) {
+      paint.colorFilter = ColorFilter.mode(silhouetteColor!, BlendMode.srcIn);
+    }
     canvas.drawImageRect(
       image,
       Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
       dest,
-      Paint()..filterQuality = FilterQuality.medium,
+      paint,
     );
     canvas.restore();
   }
@@ -317,5 +416,7 @@ class _StickerPainter extends CustomPainter {
   bool shouldRepaint(_StickerPainter oldDelegate) =>
       oldDelegate.image != image ||
       oldDelegate.radius != radius ||
-      oldDelegate.background != background;
+      oldDelegate.background != background ||
+      oldDelegate.paintBackground != paintBackground ||
+      oldDelegate.silhouetteColor != silhouetteColor;
 }

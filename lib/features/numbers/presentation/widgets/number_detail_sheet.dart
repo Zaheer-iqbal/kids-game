@@ -1,22 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart' as di;
-import '../../../../core/mascot/mascot_cubit.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/services/audio_service.dart';
 import '../../../../core/services/fun_facts.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/celebration_overlay.dart';
 import '../../../../core/widgets/emoji_picture.dart';
 import '../../../../core/widgets/fun_fact_bubble.dart';
-import '../../../../core/widgets/tracing_canvas.dart';
 import '../../domain/entities/number_entity.dart';
 import 'count_objects.dart';
 
 /// Bottom sheet shown when a number card is tapped: the big numeral, the
-/// objects being counted, a replay button, a tracing canvas for the digits and
-/// the number's fun fact (which can be read aloud).
+/// objects being counted, a replay button, a button that opens the full-screen
+/// tracing page for the digits and the number's fun fact (read aloud).
 class NumberDetailSheet extends StatefulWidget {
   const NumberDetailSheet({super.key, required this.number});
 
@@ -41,16 +40,13 @@ class NumberDetailSheet extends StatefulWidget {
 }
 
 class _NumberDetailSheetState extends State<NumberDetailSheet> {
-  bool _traced = false;
-
   void _replaySound() {
-    unawaited(di.sl<AudioService>().speakNumber(widget.number.word));
-  }
-
-  void _onTraceCompleted() {
-    setState(() => _traced = true);
-    di.sl<MascotCubit>().excited(speak: true, message: 'Great job!');
-    unawaited(showCelebrationOverlay(context, message: 'Great job!'));
+    unawaited(
+      di.sl<AudioService>().speakNumber(
+            widget.number.word,
+            value: widget.number.number,
+          ),
+    );
   }
 
   void _hearFact() {
@@ -168,68 +164,22 @@ class _NumberDetailSheetState extends State<NumberDetailSheet> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            'Trace the number!',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: AppColors.ink,
-                            ),
-                          ),
+                    FilledButton.icon(
+                      onPressed: () => context.push(
+                        AppRoutes.numberTrace(widget.number.number),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: color,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(58),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Fredoka',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(width: 8),
-                        if (_traced)
-                          const Flexible(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Icon(
-                                  Icons.star_rounded,
-                                  color: AppColors.gold,
-                                  size: 26,
-                                ),
-                                SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    'Traced!',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: AppColors.ink,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      width: double.infinity,
-                      height: 210,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: <BoxShadow>[
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                       ),
-                      child: TracingCanvas(
-                        label: '${widget.number.number}',
-                        color: color,
-                        onCompleted: _onTraceCompleted,
-                        onReset: () => setState(() => _traced = false),
-                      ),
+                      icon: const Icon(Icons.gesture_rounded, size: 28),
+                      label: const Text('Trace it!'),
                     ),
                     if (fact != null) ...<Widget>[
                       const SizedBox(height: 26),

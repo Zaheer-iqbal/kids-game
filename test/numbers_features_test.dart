@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kids/core/di/injection_container.dart' as di;
 import 'package:kids/core/services/progress_service.dart';
+import 'package:kids/core/widgets/tracing_canvas.dart';
 import 'package:kids/features/quiz/domain/entities/quiz_option.dart';
 import 'package:kids/features/quiz/presentation/bloc/quiz_bloc.dart';
 import 'package:kids/features/quiz/presentation/pages/quiz_page.dart';
@@ -137,6 +138,9 @@ void main() {
 
         expect(find.text('1 – One'), findsOneWidget);
         expect(find.text('Hear again'), findsOneWidget);
+        // Tracing now lives on its own full-screen page.
+        expect(find.text('Trace it!'), findsOneWidget);
+        expect(find.byType(TracingCanvas), findsNothing);
         expect(find.text('Fun fact!'), findsOneWidget);
         expect(find.text('Hear fun fact'), findsOneWidget);
 
@@ -155,6 +159,35 @@ void main() {
         expect(prefs.getStringList('explored_numbers'), contains('1'));
       },
     );
+
+    testWidgets('the Trace it! button opens the full-screen tracing page', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(tester);
+
+      await openWorld(tester, 'Number World');
+      await tester.tap(find.byKey(const ValueKey<String>('number-1')));
+      await openAndSettle(tester);
+
+      await tester.tap(find.text('Trace it!'));
+      await tester.pump();
+      for (int i = 0; i < 30; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        await settleReal(tester);
+        if (find.text('0%').evaluate().isNotEmpty) break;
+      }
+
+      expect(find.byType(TracingCanvas), findsOneWidget);
+      expect(find.text('Trace the whole shape!'), findsOneWidget);
+      expect(find.text('Next'), findsNothing);
+
+      await tester.tap(find.byTooltip('Back'));
+      await settleFrames(tester);
+      // Back returns to the number sheet it was opened from.
+      expect(find.text('Hear again'), findsOneWidget);
+    });
 
     testWidgets('number detail sheet shows real, original fun fact content', (
       WidgetTester tester,
